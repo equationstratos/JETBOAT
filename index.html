@@ -28,12 +28,6 @@
     input[type=range] { width: 100%; accent-color: var(--accent) }
     label.chk { display: flex; align-items: center; gap: 7px; font-size: .8rem; padding: 3px 0; cursor: pointer }
     #parts-list { max-height: 160px; overflow-y: auto }
-    
-    /* Styles pour le debug */
-    .debug-select { width: 100%; margin-bottom: 8px; background: #21262d; color: var(--text); border: 1px solid var(--border); padding: 5px; border-radius: 4px; }
-    .debug-label { font-size: 0.75rem; display: flex; justify-content: space-between; margin-top: 5px; }
-    .debug-val { color: var(--accent); font-weight: bold; }
-    
     .step-bar { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); background: rgba(22,27,34,.96); border: 1px solid var(--border); border-radius: 12px; padding: 10px 16px; display: none; align-items: center; gap: 12px; z-index: 20 }
     .step-bar.visible { display: flex }
     .step-bar .info { min-width: 150px; text-align: center }
@@ -72,23 +66,6 @@
       <h2><span>Éclatement</span> <span id="explode-val">0%</span></h2>
       <input type="range" id="explode-slider" min="0" max="100" value="0"/>
     </div>
-    
-    <!-- NOUVELLE SECTION D'AJUSTEMENT (DEBUG) -->
-    <div class="section" style="background: rgba(88, 166, 255, 0.05); border-left: 2px solid var(--accent);">
-      <h2 style="color: var(--accent);">Ajustement position</h2>
-      <select id="debug-select" class="debug-select"></select>
-      
-      <div class="debug-label">Axe X (Gauche/Droite): <span class="debug-val" id="val-x">0</span></div>
-      <input type="range" id="slider-x" min="-150" max="150" step="0.5" value="0"/>
-      
-      <div class="debug-label">Axe Y (Haut/Bas): <span class="debug-val" id="val-y">0</span></div>
-      <input type="range" id="slider-y" min="-50" max="100" step="0.5" value="0"/>
-      
-      <div class="debug-label">Axe Z (Avant/Arrière): <span class="debug-val" id="val-z">0</span></div>
-      <input type="range" id="slider-z" min="-160" max="160" step="0.5" value="0"/>
-    </div>
-    <!-- FIN NOUVELLE SECTION -->
-
     <div class="section">
       <h2>Pièces</h2>
       <div class="btn-row" style="margin-bottom:6px">
@@ -158,15 +135,16 @@
     };
     let lang = 'fr';
 
+    // Intégration de vos positions exactes relevées avec les sliders
     const PARTS = [
       {id: 'hull',   name: {fr: 'Coque', en: 'Hull'},               file: 'boat_hull.STL',           color: 0xff5500, opacity: 1,    pos: [0, 0, 0],       rot: [0, 0, 0],                 explode: [0, -55, 0]},
-      {id: 'stator', name: {fr: 'Stator jet', en: 'Jet stator'},    file: 'models/jet_stator.STL',   color: 0x1a1a1a, opacity: 1,    pos: [0, 4.8, -115],  rot: [0, Math.PI, 0],           explode: [0, 30, 80]},
-      {id: 'prop',   name: {fr: 'Hélice', en: 'Propeller'},         file: 'models/jet_propeller.STL',color: 0x333333, opacity: 1,    pos: [0, 4.8, -113],  rot: [0, Math.PI, 0],           explode: [0, 50, 60], spin: true},
-      {id: 'nozzle', name: {fr: 'Tuyère', en: 'Nozzle'},            file: 'models/jet_nozzle.STL',   color: 0x1a1a1a, opacity: 1,    pos: [0, 4.8, -131],  rot: [0, Math.PI, 0],           explode: [0, 15, 110]},
+      {id: 'stator', name: {fr: 'Stator jet', en: 'Jet stator'},    file: 'models/jet_stator.STL',   color: 0x1a1a1a, opacity: 1,    pos: [0, -10.5, -115],rot: [0, Math.PI, 0],           explode: [0, 30, 80]},
+      {id: 'prop',   name: {fr: 'Hélice', en: 'Propeller'},         file: 'models/jet_propeller.STL',color: 0x333333, opacity: 1,    pos: [0, -7, -113],   rot: [0, Math.PI, 0],           explode: [0, 50, 60], spin: true},
+      {id: 'nozzle', name: {fr: 'Tuyère', en: 'Nozzle'},            file: 'models/jet_nozzle.STL',   color: 0x1a1a1a, opacity: 1,    pos: [0, -7.5, -130.5],rot: [0, Math.PI, 0],          explode: [0, 15, 110]},
       {id: 'clevis', name: {fr: 'Clevis servo', en: 'Servo clevis'},file: 'models/servo_clevis.STL', color: 0x1a1a1a, opacity: 1,    pos: [-12, 9.3, -129],rot: [0, Math.PI, Math.PI/2],   explode: [45, 25, 50]},
-      {id: 'trim15', name: {fr: 'Trim 15°', en: 'Trim 15°'},        file: 'models/boat_trim_15.STL', color: 0x1a1a1a, opacity: 1,    pos: [-24, 2, -116],  rot: [0, 0, 0],                 explode: [-55, 5, 0]},
-      {id: 'trim20', name: {fr: 'Trim 20°', en: 'Trim 20°'},        file: 'models/boat_trim_20.STL', color: 0x1a1a1a, opacity: 1,    pos: [24, 2, -116],   rot: [0, Math.PI, 0],           explode: [55, 5, 0]},
-      {id: 'cover',  name: {fr: 'Couvercle', en: 'Cover'},          file: 'models/boat_cover.STL',   color: 0x182030, opacity: 1,    pos: [0, 24, -5],     rot: [-Math.PI/2, 0, 0],        explode: [0, 90, 0]},
+      {id: 'trim15', name: {fr: 'Trim 15°', en: 'Trim 15°'},        file: 'models/boat_trim_15.STL', color: 0x1a1a1a, opacity: 1,    pos: [-24, -8.5, -116],rot: [0, 0, 0],                explode: [-55, 5, 0]},
+      {id: 'trim20', name: {fr: 'Trim 20°', en: 'Trim 20°'},        file: 'models/boat_trim_20.STL', color: 0x1a1a1a, opacity: 1,    pos: [24, -8.5, -116], rot: [0, Math.PI, 0],          explode: [55, 5, 0]},
+      {id: 'cover',  name: {fr: 'Couvercle', en: 'Cover'},          file: 'models/boat_cover.STL',   color: 0x182030, opacity: 1,    pos: [0, 32.5, -22],  rot: [-Math.PI/2, 0, 0],        explode: [0, 90, 0]},
       {id: 'rc',     name: {fr: 'Support RC', en: 'RC mount'},      file: 'models/rc_mount.STL',     color: 0x333333, opacity: 1,    pos: [0, 8, -10],     rot: [-Math.PI/2, 0, 0],        explode: [0, 50, -30]},
     ];
 
@@ -198,12 +176,6 @@
     let mode = 'assembled', explodeAmount = 0, currentStep = 0, autoRotate = false;
     const loader = new STLLoader();
     let loaded = 0;
-
-    // --- VARIABLES DEBUG ---
-    const debugSelect = document.getElementById('debug-select');
-    const sX = document.getElementById('slider-x'), vX = document.getElementById('val-x');
-    const sY = document.getElementById('slider-y'), vY = document.getElementById('val-y');
-    const sZ = document.getElementById('slider-z'), vZ = document.getElementById('val-z');
 
     function loadPart(part) {
       return new Promise(resolve => {
@@ -246,17 +218,10 @@
       list.innerHTML = '';
       
       PARTS.forEach(p => {
-        // Remplir liste d'affichage
         const lab = document.createElement('label');
         lab.className = 'chk';
         lab.innerHTML = `<input type="checkbox" checked data-part="${p.id}"> ${p.name[lang]}`;
         list.appendChild(lab);
-        
-        // Remplir select du debug
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = p.name[lang] + ` (${p.id})`;
-        debugSelect.appendChild(opt);
       });
       
       list.querySelectorAll('input').forEach(inp => {
@@ -264,40 +229,7 @@
       });
       document.getElementById('loading').classList.add('hidden');
       fitCamera();
-      updateDebugUI(); // Initialiser valeurs sliders
     }
-
-    // --- FONCTIONS DEBUG ---
-    function updateDebugUI() {
-      const id = debugSelect.value;
-      const mesh = meshes[id];
-      if(!mesh) return;
-      sX.value = mesh.position.x; vX.textContent = mesh.position.x;
-      sY.value = mesh.position.y; vY.textContent = mesh.position.y;
-      sZ.value = mesh.position.z; vZ.textContent = mesh.position.z;
-    }
-    
-    debugSelect.onchange = updateDebugUI;
-    
-    function applyDebugValues() {
-      const id = debugSelect.value;
-      const mesh = meshes[id];
-      if(!mesh) return;
-      
-      const x = parseFloat(sX.value);
-      const y = parseFloat(sY.value);
-      const z = parseFloat(sZ.value);
-      
-      vX.textContent = x; vY.textContent = y; vZ.textContent = z;
-      
-      mesh.position.set(x, y, z);
-      basePositions[id].set(x, y, z); // Mettre à jour la base pour que l'éclatement fonctionne
-    }
-
-    sX.oninput = applyDebugValues;
-    sY.oninput = applyDebugValues;
-    sZ.oninput = applyDebugValues;
-    // -----------------------
 
     function applyTransforms() {
       const t = mode === 'exploded' ? explodeAmount / 100 : 0;
