@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>JETBOAT — Visualiseur 3D RC Mini Jet Boat</title>
   <meta name="description" content="Visualiseur 3D interactif du RC Mini Jet Boat (jtronics) — assemblage, vue éclatée, build pas-à-pas" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚤</text></svg>" />
   <style>
     :root {
       --bg: #0d1117;
@@ -117,7 +118,7 @@
     </div>
 
     <div class="section" id="explode-section">
-      <h2 data-i18n="explode">Éclatement <span id="explode-val">0%</span></h2>
+      <h2><span data-i18n="explode">Éclatement</span> <span id="explode-val">0%</span></h2>
       <input type="range" id="explode-slider" min="0" max="100" value="0" />
     </div>
 
@@ -195,7 +196,6 @@
     import { STLLoader } from 'three/addons/loaders/STLLoader.js';
     import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-    // ─── i18n ───────────────────────────────────────────────
     const I18N = {
       fr: {
         mode: 'Mode', assembled: 'Assemblé', exploded: 'Éclaté', build: 'Build pas-à-pas',
@@ -238,13 +238,16 @@
     function applyI18n() {
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const k = el.getAttribute('data-i18n');
-        if (I18N[lang][k]) el.textContent = I18N[lang][k];
+        if (k && I18N[lang] && I18N[lang][k]) el.textContent = I18N[lang][k];
       });
-      document.getElementById('explode-val').textContent = document.getElementById('explode-slider').value + '%';
-      updateStepUI();
+      const explodeVal = document.getElementById('explode-val');
+      const explodeSlider = document.getElementById('explode-slider');
+      if (explodeVal && explodeSlider) {
+        explodeVal.textContent = explodeSlider.value + '%';
+      }
+      if (typeof updateStepUI === 'function') updateStepUI();
     }
 
-    // ─── PARTS DEFINITION ───────────────────────────────────
     const PARTS = [
       { id: 'hull',     name: {fr:'Coque', en:'Hull'},           file: 'boat_hull.STL',           color: 0x2d6a9f, opacity: 0.95,
         pos: [0, 0, 0], rot: [0, 0, 0], explode: [0, -40, 0] },
@@ -268,7 +271,6 @@
 
     const BUILD_ORDER = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
-    // ─── SCENE SETUP ───────────────────────────────────────
     const container = document.getElementById('canvas-wrap');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0d1117);
@@ -303,7 +305,6 @@
     dir2.position.set(-60, 40, -80);
     scene.add(dir2);
 
-    // ─── STATE ──────────────────────────────────────────────
     const meshes = {};
     const basePositions = {};
     const explodeOffsets = {};
@@ -314,15 +315,16 @@
     let wireframe = false;
     let showEdges = false;
 
-    // ─── LOAD MODELS ───────────────────────────────────────
     const loader = new STLLoader();
     let loaded = 0;
     const total = PARTS.length;
 
     function updateProgress() {
       const pct = Math.round((loaded / total) * 100);
-      document.getElementById('load-fill').style.width = pct + '%';
-      document.getElementById('load-text').textContent = t('load') + ` ${pct}%`;
+      const fill = document.getElementById('load-fill');
+      const text = document.getElementById('load-text');
+      if (fill) fill.style.width = pct + '%';
+      if (text) text.textContent = t('load') + ' ' + pct + '%';
     }
 
     function loadPart(part) {
@@ -378,7 +380,7 @@
       PARTS.forEach(p => {
         const lab = document.createElement('label');
         lab.className = 'chk';
-        lab.innerHTML = `<input type="checkbox" checked data-part="${p.id}"> ${p.name[lang]}`;
+        lab.innerHTML = '<input type="checkbox" checked data-part="' + p.id + '"> ' + p.name[lang];
         list.appendChild(lab);
       });
       list.querySelectorAll('input').forEach(inp => {
@@ -393,7 +395,6 @@
       fitCamera();
     }
 
-    // ─── MODES ──────────────────────────────────────────────
     function setMode(m) {
       mode = m;
       document.getElementById('btn-assembled').classList.toggle('active', m === 'assembled');
@@ -454,9 +455,12 @@
     }
 
     function updateStepUI() {
-      const s = I18N[lang].steps[currentStep] || I18N[lang].steps[0];
-      document.getElementById('step-title').textContent = s.title;
-      document.getElementById('step-desc').textContent = s.desc;
+      const s = (I18N[lang] && I18N[lang].steps && I18N[lang].steps[currentStep]) || (I18N[lang] && I18N[lang].steps && I18N[lang].steps[0]);
+      if (!s) return;
+      const titleEl = document.getElementById('step-title');
+      const descEl = document.getElementById('step-desc');
+      if (titleEl) titleEl.textContent = s.title;
+      if (descEl) descEl.textContent = s.desc;
     }
 
     function showAllParts(vis) {
@@ -470,7 +474,6 @@
       document.querySelectorAll('#parts-list input').forEach(inp => inp.checked = vis);
     }
 
-    // ─── CAMERA PRESETS ─────────────────────────────────────
     function fitCamera() {
       const box = new THREE.Box3();
       Object.values(meshes).forEach(m => { if (m.visible) box.expandByObject(m); });
@@ -497,7 +500,6 @@
       controls.update();
     }
 
-    // ─── UI EVENTS ──────────────────────────────────────────
     document.getElementById('btn-assembled').onclick = () => setMode('assembled');
     document.getElementById('btn-exploded').onclick = () => setMode('exploded');
     document.getElementById('btn-build').onclick = () => setMode('build');
@@ -572,6 +574,7 @@
 
     function toast(msg) {
       const el = document.getElementById('toast');
+      if (!el) return;
       el.textContent = msg;
       el.classList.add('show');
       setTimeout(() => el.classList.remove('show'), 2200);
@@ -583,7 +586,6 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // ─── ANIMATION LOOP ─────────────────────────────────────
     function animate() {
       requestAnimationFrame(animate);
       controls.autoRotate = autoRotate;
@@ -592,7 +594,6 @@
       renderer.render(scene, camera);
     }
 
-    // Start
     applyI18n();
     loadAll().then(() => {
       animate();
