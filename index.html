@@ -1,1 +1,221 @@
-SEE_LOCAL_FILE
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>JETBOAT — Visualiseur 3D</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚤</text></svg>"/>
+<style>
+:root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--accent2:#f78166}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;font-family:system-ui,sans-serif;background:var(--bg);color:var(--text)}
+#canvas-wrap{position:absolute;inset:0}canvas{display:block;width:100%;height:100%;touch-action:none}
+#ui{position:absolute;top:0;left:0;bottom:0;width:280px;background:rgba(22,27,34,.94);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:10;overflow-y:auto}
+#ui header{padding:14px 16px 10px;border-bottom:1px solid var(--border)}
+#ui header h1{font-size:1.1rem;font-weight:700}
+#ui header p{font-size:.72rem;color:var(--muted);margin-top:3px}
+.section{padding:10px 14px;border-bottom:1px solid var(--border)}
+.section h2{font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px}
+.btn-row{display:flex;gap:5px;flex-wrap:wrap}
+button{background:#21262d;border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:.78rem;cursor:pointer}
+button:hover{background:#30363d}button.active{background:var(--accent);border-color:var(--accent);color:#0d1117;font-weight:600}
+button.primary{background:var(--accent2);border-color:var(--accent2);color:#0d1117;font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+label.chk{display:flex;align-items:center;gap:7px;font-size:.8rem;padding:3px 0;cursor:pointer}
+#parts-list{max-height:160px;overflow-y:auto}
+.step-bar{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(22,27,34,.96);border:1px solid var(--border);border-radius:12px;padding:10px 16px;display:none;align-items:center;gap:12px;z-index:20}
+.step-bar.visible{display:flex}
+.step-bar .info{min-width:150px;text-align:center}
+.step-bar .info strong{display:block;font-size:.9rem}
+.step-bar .info span{font-size:.72rem;color:var(--muted)}
+#lang{position:absolute;top:10px;right:10px;z-index:15;display:flex;gap:4px}
+#lang button{padding:4px 9px;font-size:.72rem}
+#loading{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;transition:opacity .45s}
+#loading.hidden{opacity:0;pointer-events:none}
+#loading .bar{width:200px;height:3px;background:#21262d;border-radius:2px;margin-top:14px;overflow:hidden}
+#loading .fill{height:100%;background:var(--accent);width:0%;transition:width .2s}
+#toast{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:#21262d;border:1px solid var(--border);padding:7px 14px;border-radius:8px;font-size:.82rem;opacity:0;transition:opacity .3s;z-index:50;pointer-events:none}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="loading"><div style="font-size:1.5rem;font-weight:700">🚤 JETBOAT</div>
+<div style="color:var(--muted);margin-top:6px;font-size:.85rem" id="load-text">Chargement…</div>
+<div class="bar"><div class="fill" id="load-fill"></div></div></div>
+<div id="toast"></div>
+<div id="canvas-wrap"></div>
+<div id="ui">
+<header><h1>🚤 JETBOAT</h1><p>RC Mini Jet Boat · jtronics</p></header>
+<div class="section"><h2>Mode</h2>
+<div class="btn-row">
+<button id="btn-assembled" class="active">Assemblé</button>
+<button id="btn-exploded">Éclaté</button>
+<button id="btn-build" class="primary">Build</button>
+</div></div>
+<div class="section" id="explode-section">
+<h2><span>Éclatement</span> <span id="explode-val">0%</span></h2>
+<input type="range" id="explode-slider" min="0" max="100" value="0"/>
+</div>
+<div class="section"><h2>Pièces</h2>
+<div class="btn-row" style="margin-bottom:6px">
+<button id="btn-show-all" style="font-size:.7rem">Tout</button>
+<button id="btn-hide-all" style="font-size:.7rem">Masquer</button>
+</div>
+<div id="parts-list"></div></div>
+<div class="section"><h2>Affichage</h2>
+<label class="chk"><input type="checkbox" id="chk-wire"/> Filaire</label>
+<label class="chk"><input type="checkbox" id="chk-auto"/> Auto-rotation</label>
+</div>
+<div class="section" style="margin-top:auto;border-bottom:none">
+<p style="font-size:.75rem;color:var(--muted);line-height:1.45">
+RC Mini Jet Boat · 230×75×50 mm<br>
+<a href="https://cults3d.com/en/3d-model/game/rc-mini-jet-boat" target="_blank" style="color:var(--accent)">jtronics / Cults3D</a>
+</p></div>
+</div>
+<div class="step-bar" id="step-bar">
+<button id="step-prev">◀</button>
+<div class="info"><strong id="step-title">Étape 1</strong><span id="step-desc">…</span></div>
+<button id="step-next">▶</button>
+</div>
+<div id="lang"><button id="btn-fr" class="active">FR</button><button id="btn-en">EN</button></div>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {STLLoader} from 'three/addons/loaders/STLLoader.js';
+
+const STEPS={
+fr:[{title:'Étape 1 — Coque',desc:'Positionner la coque'},{title:'Étape 2 — Stator',desc:'Stator dans le tunnel arrière'},{title:'Étape 3 — Hélice',desc:'Hélice dans le stator'},{title:'Étape 4 — Tuyère',desc:'Tuyère à la poupe'},{title:'Étape 5 — Support RC',desc:'Support électronique'},{title:'Étape 6 — Clevis',desc:'Liaison servo'},{title:'Étape 7 — Trims',desc:'Trims de direction'},{title:'Étape 8 — Couvercle',desc:'Couvercle sur le pont'},{title:'Étape 9 — Complet',desc:'Assemblage terminé 🚤'}],
+en:[{title:'Step 1 — Hull',desc:'Place the hull'},{title:'Step 2 — Stator',desc:'Stator in rear tunnel'},{title:'Step 3 — Propeller',desc:'Prop inside stator'},{title:'Step 4 — Nozzle',desc:'Nozzle at stern'},{title:'Step 5 — RC mount',desc:'Electronics mount'},{title:'Step 6 — Clevis',desc:'Servo linkage'},{title:'Step 7 — Trims',desc:'Steering trims'},{title:'Step 8 — Cover',desc:'Cover on deck'},{title:'Step 9 — Complete',desc:'Assembly done 🚤'}]
+};
+let lang='fr';
+
+const PARTS=[
+{id:'hull',name:{fr:'Coque',en:'Hull'},file:'boat_hull.STL',color:0x3b82f6,opacity:0.4,pos:[0,0,0],rot:[0,0,0],explode:[0,-55,0]},
+{id:'stator',name:{fr:'Stator jet',en:'Jet stator'},file:'models/jet_stator.STL',color:0x6b7280,opacity:1,pos:[0,6,114],rot:[0,0,0],explode:[0,30,80]},
+{id:'prop',name:{fr:'Hélice',en:'Propeller'},file:'models/jet_propeller.STL',color:0xf59e0b,opacity:1,pos:[0,6,112],rot:[0,0,0],explode:[0,50,60],spin:true},
+{id:'nozzle',name:{fr:'Tuyère',en:'Nozzle'},file:'models/jet_nozzle.STL',color:0x374151,opacity:1,pos:[0,6,130],rot:[0,0,0],explode:[0,15,110]},
+{id:'cover',name:{fr:'Couvercle',en:'Cover'},file:'models/boat_cover.STL',color:0x2563eb,opacity:0.92,pos:[0,24,-5],rot:[-Math.PI/2,0,Math.PI],explode:[0,90,0]},
+{id:'rc',name:{fr:'Support RC',en:'RC mount'},file:'models/rc_mount.STL',color:0x16a34a,opacity:1,pos:[0,8,-10],rot:[-Math.PI/2,0,0],explode:[0,50,-30]},
+{id:'clevis',name:{fr:'Clevis servo',en:'Servo clevis'},file:'models/servo_clevis.STL',color:0xca8a04,opacity:1,pos:[12,10,128],rot:[0,0,Math.PI/2],explode:[45,25,50]},
+{id:'trim15',name:{fr:'Trim 15°',en:'Trim 15°'},file:'models/boat_trim_15.STL',color:0x7c3aed,opacity:1,pos:[-38,-5,50],rot:[0,0,0],explode:[-55,5,0]},
+{id:'trim20',name:{fr:'Trim 20°',en:'Trim 20°'},file:'models/boat_trim_20.STL',color:0x9333ea,opacity:1,pos:[38,-5,50],rot:[0,Math.PI,0],explode:[55,5,0]},
+];
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0d1117);
+const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.5,2000);
+camera.position.set(160,100,160);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.6;
+document.getElementById('canvas-wrap').appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;controls.target.set(0,5,20);
+scene.add(new THREE.AmbientLight(0xffffff,0.55));
+scene.add(new THREE.HemisphereLight(0xe0f0ff,0x3a3a3a,1.4));
+const d1=new THREE.DirectionalLight(0xffffff,2.4);d1.position.set(100,150,80);scene.add(d1);
+const d2=new THREE.DirectionalLight(0xaaccff,1.2);d2.position.set(-80,60,-100);scene.add(d2);
+
+const meshes={},basePositions={},explodeOffsets={};
+let mode='assembled',explodeAmount=0,currentStep=0,autoRotate=false;
+const loader=new STLLoader();
+let loaded=0;
+
+function loadPart(part){
+ return new Promise(resolve=>{
+  loader.load(part.file,geo=>{
+   geo.computeVertexNormals();geo.center();
+   const tr=part.opacity<1;
+   const mat=new THREE.MeshLambertMaterial({color:part.color,transparent:tr,opacity:part.opacity,depthWrite:!tr,side:THREE.DoubleSide});
+   const mesh=new THREE.Mesh(geo,mat);
+   mesh.name=part.id;mesh.userData.part=part;
+   if(tr)mesh.renderOrder=1;
+   mesh.position.set(...part.pos);mesh.rotation.set(...part.rot);
+   basePositions[part.id]=mesh.position.clone();
+   explodeOffsets[part.id]=new THREE.Vector3(...part.explode);
+   scene.add(mesh);meshes[part.id]=mesh;
+   loaded++;
+   document.getElementById('load-fill').style.width=(loaded/PARTS.length*100)+'%';
+   resolve();
+  },undefined,()=>{loaded++;resolve();});
+ });
+}
+
+async function loadAll(){
+ for(const p of PARTS)await loadPart(p);
+ const list=document.getElementById('parts-list');list.innerHTML='';
+ PARTS.forEach(p=>{
+  const lab=document.createElement('label');lab.className='chk';
+  lab.innerHTML=`<input type="checkbox" checked data-part="${p.id}"> ${p.name[lang]}`;
+  list.appendChild(lab);
+ });
+ list.querySelectorAll('input').forEach(inp=>{
+  inp.onchange=()=>{const m=meshes[inp.dataset.part];if(m)m.visible=inp.checked};
+ });
+ document.getElementById('loading').classList.add('hidden');
+ fitCamera();
+}
+
+function applyTransforms(){
+ const t=mode==='exploded'?explodeAmount/100:0;
+ PARTS.forEach(p=>{
+  const m=meshes[p.id];if(!m)return;
+  const b=basePositions[p.id],o=explodeOffsets[p.id];
+  m.position.set(b.x+o.x*t,b.y+o.y*t,b.z+o.z*t);
+ });
+}
+
+function setMode(m){
+ mode=m;
+ document.getElementById('btn-assembled').classList.toggle('active',m==='assembled');
+ document.getElementById('btn-exploded').classList.toggle('active',m==='exploded');
+ document.getElementById('btn-build').classList.toggle('active',m==='build');
+ document.getElementById('step-bar').classList.toggle('visible',m==='build');
+ if(m==='assembled'){explodeAmount=0;document.getElementById('explode-slider').value=0;document.getElementById('explode-val').textContent='0%';applyTransforms();showAll(true)}
+ else if(m==='exploded'){applyTransforms();showAll(true)}
+ else{currentStep=0;updateStep();applyBuild()}
+}
+
+function showAll(v){PARTS.forEach(p=>{const m=meshes[p.id];if(m)m.visible=v});document.querySelectorAll('#parts-list input').forEach(i=>i.checked=v)}
+function applyBuild(){PARTS.forEach((p,i)=>{const m=meshes[p.id];if(!m)return;m.visible=i<=currentStep})}
+function updateStep(){const s=STEPS[lang][currentStep];if(!s)return;document.getElementById('step-title').textContent=s.title;document.getElementById('step-desc').textContent=s.desc}
+
+function fitCamera(){
+ const box=new THREE.Box3();
+ Object.values(meshes).forEach(m=>{if(m.visible)box.expandByObject(m)});
+ if(box.isEmpty())return;
+ const c=box.getCenter(new THREE.Vector3()),s=box.getSize(new THREE.Vector3());
+ const d=Math.max(s.x,s.y,s.z)*1.6;
+ controls.target.copy(c);camera.position.set(c.x+d*.7,c.y+d*.45,c.z+d*.7);controls.update();
+}
+
+document.getElementById('btn-assembled').onclick=()=>setMode('assembled');
+document.getElementById('btn-exploded').onclick=()=>setMode('exploded');
+document.getElementById('btn-build').onclick=()=>setMode('build');
+document.getElementById('explode-slider').oninput=e=>{explodeAmount=+e.target.value;document.getElementById('explode-val').textContent=explodeAmount+'%';if(mode!=='exploded')setMode('exploded');else applyTransforms()};
+document.getElementById('btn-show-all').onclick=()=>showAll(true);
+document.getElementById('btn-hide-all').onclick=()=>showAll(false);
+document.getElementById('chk-wire').onchange=e=>Object.values(meshes).forEach(m=>{if(m.material)m.material.wireframe=e.target.checked});
+document.getElementById('chk-auto').onchange=e=>{autoRotate=e.target.checked};
+document.getElementById('step-prev').onclick=()=>{if(currentStep>0){currentStep--;updateStep();applyBuild()}};
+document.getElementById('step-next').onclick=()=>{if(currentStep<PARTS.length-1){currentStep++;updateStep();applyBuild()}};
+document.getElementById('btn-fr').onclick=()=>{lang='fr';document.getElementById('btn-fr').classList.add('active');document.getElementById('btn-en').classList.remove('active');updateStep();document.querySelectorAll('#parts-list label').forEach((l,i)=>{const inp=l.querySelector('input');l.innerHTML='';l.appendChild(inp);l.appendChild(document.createTextNode(' '+PARTS[i].name.fr))}};
+document.getElementById('btn-en').onclick=()=>{lang='en';document.getElementById('btn-en').classList.add('active');document.getElementById('btn-fr').classList.remove('active');updateStep();document.querySelectorAll('#parts-list label').forEach((l,i)=>{const inp=l.querySelector('input');l.innerHTML='';l.appendChild(inp);l.appendChild(document.createTextNode(' '+PARTS[i].name.en))}};
+
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+const clock=new THREE.Clock();
+function animate(){
+ requestAnimationFrame(animate);
+ const dt=clock.getDelta();
+ const prop=meshes.prop;if(prop&&prop.visible)prop.rotation.z+=dt*12;
+ controls.autoRotate=autoRotate;controls.update();renderer.render(scene,camera);
+}
+loadAll().then(()=>{animate();setMode('assembled')});
+</script>
+</body>
+</html>
