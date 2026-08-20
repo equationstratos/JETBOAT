@@ -204,8 +204,8 @@ document.getElementById('chk-wire').onchange=e=>Object.values(meshes).forEach(m=
 document.getElementById('chk-auto').onchange=e=>{autoRotate=e.target.checked};
 document.getElementById('step-prev').onclick=()=>{if(currentStep>0){currentStep--;updateStep();applyBuild()}};
 document.getElementById('step-next').onclick=()=>{if(currentStep<PARTS.length-1){currentStep++;updateStep();applyBuild()}};
-document.getElementById('btn-fr').onclick=()=>{lang='fr';document.getElementById('btn-fr').classList.add('active');document.getElementById('btn-en').classList.remove('active');updateStep();document.querySelectorAll('#parts-list label').forEach((l,i)=>{const inp=l.querySelector('input');l.innerHTML='';l.appendChild(inp);l.appendChild(document.createTextNode(' '+PARTS[i].name.fr))}};
-document.getElementById('btn-en').onclick=()=>{lang='en';document.getElementById('btn-en').classList.add('active');document.getElementById('btn-fr').classList.remove('active');updateStep();document.querySelectorAll('#parts-list label').forEach((l,i)=>{const inp=l.querySelector('input');l.innerHTML='';l.appendChild(inp);l.appendChild(document.createTextNode(' '+PARTS[i].name.en))}};
+document.getElementById('btn-fr').onclick=()=>{lang='fr';document.getElementById('btn-fr').classList.add('active');document.getElementById('btn-en').classList.remove('active');updateStep();document.querySelectorAll('#parts-list label').forEach((l,i)=>{const inp=l.querySelector('input');l.innerHTML='';l.appendChild(inp);l.appendChild(document.createTextNode(' '+PARTS[i].name.fr))})};
+document.getElementById('btn-en').onclick=()=>{lang='en';document.getElementById('btn-en').classList.add('active');document.getElementById('btn-fr').classList.remove('active');updateStep();document.querySelectorAll('#parts-list label').forEach((l,i)=>{const inp=l.querySelector('input');l.innerHTML='';l.appendChild(inp);l.appendChild(document.createTextNode(' '+PARTS[i].name.en))})};
 
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 const clock=new THREE.Clock();
