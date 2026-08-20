@@ -144,23 +144,22 @@
     };
     let lang = 'fr';
 
-    // --- CORRECTIONS APPLIQUÉES ICI ---
+    // --- CORRECTIONS DU JET, AILERONS ET COUVERCLE ---
     const PARTS = [
-      // Coque 100% opaque pour éviter l'effet "incomplet"
       {id: 'hull',   name: {fr: 'Coque', en: 'Hull'},               file: 'boat_hull.STL',           color: 0xff5500, opacity: 1,    pos: [0, 0, 0],       rot: [0, 0, 0],                 explode: [0, -55, 0]},
       
-      // Moteur et jet réalignés avec le trou (ajustement de Y et Z)
-      {id: 'stator', name: {fr: 'Stator jet', en: 'Jet stator'},    file: 'models/jet_stator.STL',   color: 0x1a1a1a, opacity: 1,    pos: [0, 6.5, -118],  rot: [0, Math.PI, 0],           explode: [0, 30, 80]},
-      {id: 'prop',   name: {fr: 'Hélice', en: 'Propeller'},         file: 'models/jet_propeller.STL',color: 0x333333, opacity: 1,    pos: [0, 6.5, -116],  rot: [0, Math.PI, 0],           explode: [0, 50, 60], spin: true},
-      {id: 'nozzle', name: {fr: 'Tuyère', en: 'Nozzle'},            file: 'models/jet_nozzle.STL',   color: 0x1a1a1a, opacity: 1,    pos: [0, 6.5, -134],  rot: [0, Math.PI, 0],           explode: [0, 15, 110]},
-      {id: 'clevis', name: {fr: 'Clevis servo', en: 'Servo clevis'},file: 'models/servo_clevis.STL', color: 0x1a1a1a, opacity: 1,    pos: [-12, 11, -132], rot: [0, Math.PI, Math.PI/2],   explode: [45, 25, 50]},
+      // Moteur et jet (Axe Y descendu à 3.5 pour cibler le trou)
+      {id: 'stator', name: {fr: 'Stator jet', en: 'Jet stator'},    file: 'models/jet_stator.STL',   color: 0x1a1a1a, opacity: 1,    pos: [0, 3.5, -116],  rot: [0, Math.PI, 0],           explode: [0, 30, 80]},
+      {id: 'prop',   name: {fr: 'Hélice', en: 'Propeller'},         file: 'models/jet_propeller.STL',color: 0x333333, opacity: 1,    pos: [0, 3.5, -114],  rot: [0, Math.PI, 0],           explode: [0, 50, 60], spin: true},
+      {id: 'nozzle', name: {fr: 'Tuyère', en: 'Nozzle'},            file: 'models/jet_nozzle.STL',   color: 0x1a1a1a, opacity: 1,    pos: [0, 3.5, -132],  rot: [0, Math.PI, 0],           explode: [0, 15, 110]},
+      {id: 'clevis', name: {fr: 'Clevis servo', en: 'Servo clevis'},file: 'models/servo_clevis.STL', color: 0x1a1a1a, opacity: 1,    pos: [-12, 8, -130],  rot: [0, Math.PI, Math.PI/2],   explode: [45, 25, 50]},
       
-      // Ailerons retournés (rotation X = Math.PI) et alignés avec les perçages probables
-      {id: 'trim15', name: {fr: 'Trim 15°', en: 'Trim 15°'},        file: 'models/boat_trim_15.STL', color: 0x1a1a1a, opacity: 1,    pos: [-24, 4, -118],  rot: [Math.PI, 0, 0],           explode: [-55, 5, 0]},
-      {id: 'trim20', name: {fr: 'Trim 20°', en: 'Trim 20°'},        file: 'models/boat_trim_20.STL', color: 0x1a1a1a, opacity: 1,    pos: [24, 4, -118],   rot: [Math.PI, Math.PI, 0],     explode: [55, 5, 0]},
+      // Ailerons (Rotation remise à zéro / à l'endroit)
+      {id: 'trim15', name: {fr: 'Trim 15°', en: 'Trim 15°'},        file: 'models/boat_trim_15.STL', color: 0x1a1a1a, opacity: 1,    pos: [-24, 2, -116],  rot: [0, 0, 0],                 explode: [-55, 5, 0]},
+      {id: 'trim20', name: {fr: 'Trim 20°', en: 'Trim 20°'},        file: 'models/boat_trim_20.STL', color: 0x1a1a1a, opacity: 1,    pos: [24, 2, -116],   rot: [0, Math.PI, 0],           explode: [55, 5, 0]},
       
-      // Couvercle et Support RC
-      {id: 'cover',  name: {fr: 'Couvercle', en: 'Cover'},          file: 'models/boat_cover.STL',   color: 0x182030, opacity: 1,    pos: [0, 24, -5],     rot: [-Math.PI/2, 0, Math.PI],  explode: [0, 90, 0]},
+      // Couvercle (Retourné avec Math.PI/2 sur X) et Support RC
+      {id: 'cover',  name: {fr: 'Couvercle', en: 'Cover'},          file: 'models/boat_cover.STL',   color: 0x182030, opacity: 1,    pos: [0, 24, -5],     rot: [Math.PI/2, 0, Math.PI],   explode: [0, 90, 0]},
       {id: 'rc',     name: {fr: 'Support RC', en: 'RC mount'},      file: 'models/rc_mount.STL',     color: 0x333333, opacity: 1,    pos: [0, 8, -10],     rot: [-Math.PI/2, 0, 0],        explode: [0, 50, -30]},
     ];
 
