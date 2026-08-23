@@ -53,9 +53,40 @@ JETBOAT/
     └── servo_clevis.STL
 ```
 
-> Les positions d’assemblage dans le visualiseur sont approximatives  
-> (les STL d’origine sont orientés pour l’impression 3D, pas pour un assemblage CAO unique).  
-> Tu peux les affiner dans `index.html` (tableau `PARTS`).
+### Repère et positions d’assemblage
+
+Chaque STL d’origine est exporté dans **son propre repère d’impression** (posé à plat,
+coin de la boîte englobante à l’origine) : un simple `pos: [0,0,0]` empile toutes les
+pièces au même endroit. Le tableau `PARTS` d’`index.html` contient donc, pour chaque
+pièce, une **rotation** qui la remet dans le repère bateau et une **translation**
+calculée sur ses vraies portées / perçages, mesurées dans les maillages :
+
+| Repère monde | |
+|---|---|
+| `+X` | tribord |
+| `+Y` | haut (quille à `Y = 0`) |
+| `+Z` | proue (origine au milieu de la coque, longueur 200 mm) |
+
+Références mesurées utilisées pour le calage :
+
+- **Tableau arrière** : plan parfaitement vertical à `Z = −99.95`.
+- **Jet** : les 3 perçages M2 du tableau arrière sont à R = 16 mm (±16 en X, +16 en Y)
+  autour de l’axe du jet → le stator est retourné (`rot.x = π`) pour que sa 3ᵉ patte
+  pointe vers le haut, bride plaquée sur le tableau arrière, tuyère vers l’arrière.
+- **Tuyère** : rotule Ø 22.5 mm du stator centrée à `Z = −113.29` ; l’axe de pivot
+  vertical de la tuyère et son bras de direction viennent dessus, le bras se retrouvant
+  juste sous le passage de tringle Ø 2.25 du tableau arrière.
+- **Impulseur** : Ø 19.5 mm dans le tunnel Ø ≈ 20 mm, ogive vers l’avant, pales au ras
+  de l’entrée du stator.
+- **Couvercle / support RC** : posés sur les bossages à inserts laiton de la coque
+  (entraxes 45 / 50 mm pour le capot, 40 mm pour la platine), à `Y = 39.6` et `Y = 29.4`.
+- **Trims** : vissés sur les 2 × 2 perçages M2 du bas du tableau arrière (entraxe 6 mm,
+  inclinés à ~21.5°, l’angle de carène) ; `boat_trim_15` et `boat_trim_20` sont deux
+  **variantes d’angle** de la même pièce — le visualiseur en montre une par bord, en
+  vrai on imprime 2× la même.
+
+Longueur totale obtenue coque + stator + tuyère : **230 mm**, conforme au readme
+d’origine de jtronics.
 
 ## Guide de montage (extrait de readme.txt)
 

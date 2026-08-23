@@ -111,41 +111,50 @@
 
     const STEPS = {
       fr: [
-        {title: 'Étape 1 — Coque', desc: 'Positionner la coque'},
-        {title: 'Étape 2 — Stator', desc: 'Stator dans le tunnel arrière'},
-        {title: 'Étape 3 — Hélice', desc: 'Hélice dans le stator'},
-        {title: 'Étape 4 — Tuyère', desc: 'Tuyère à la poupe'},
-        {title: 'Étape 5 — Support RC', desc: 'Support électronique'},
-        {title: 'Étape 6 — Clevis', desc: 'Liaison servo'},
-        {title: 'Étape 7 — Trims', desc: 'Trims de direction'},
-        {title: 'Étape 8 — Couvercle', desc: 'Couvercle sur le pont'},
-        {title: 'Étape 9 — Complet', desc: 'Assemblage terminé 🚤'}
+        {title: 'Étape 1 — Coque', desc: 'Coque imprimée, pont vers le haut'},
+        {title: 'Étape 2 — Support RC', desc: 'Platine électronique vissée dans la coque'},
+        {title: 'Étape 3 — Hélice', desc: 'Impulseur dans le tunnel, ogive vers l\'avant'},
+        {title: 'Étape 4 — Stator', desc: 'Stator boulonné au tableau arrière (3 vis M2)'},
+        {title: 'Étape 5 — Tuyère', desc: 'Tuyère orientable clipsée sur la rotule du stator'},
+        {title: 'Étape 6 — Clevis servo', desc: 'Chape reliant la tringle au bras de tuyère'},
+        {title: 'Étape 7 — Trim bâbord', desc: 'Trim vissé sur le tableau arrière, côté bâbord'},
+        {title: 'Étape 8 — Trim tribord', desc: 'Trim vissé sur le tableau arrière, côté tribord'},
+        {title: 'Étape 9 — Couvercle', desc: 'Capot + joint mousse, 4 vis M2 — terminé 🚤'}
       ],
       en: [
-        {title: 'Step 1 — Hull', desc: 'Place the hull'},
-        {title: 'Step 2 — Stator', desc: 'Stator in rear tunnel'},
-        {title: 'Step 3 — Propeller', desc: 'Prop inside stator'},
-        {title: 'Step 4 — Nozzle', desc: 'Nozzle at stern'},
-        {title: 'Step 5 — RC mount', desc: 'Electronics mount'},
-        {title: 'Step 6 — Clevis', desc: 'Servo linkage'},
-        {title: 'Step 7 — Trims', desc: 'Steering trims'},
-        {title: 'Step 8 — Cover', desc: 'Cover on deck'},
-        {title: 'Step 9 — Complete', desc: 'Assembly done 🚤'}
+        {title: 'Step 1 — Hull', desc: 'Printed hull, deck up'},
+        {title: 'Step 2 — RC mount', desc: 'Electronics tray screwed inside the hull'},
+        {title: 'Step 3 — Impeller', desc: 'Impeller in the tunnel, nose cone forward'},
+        {title: 'Step 4 — Stator', desc: 'Stator bolted to the transom (3× M2)'},
+        {title: 'Step 5 — Nozzle', desc: 'Steering nozzle clipped on the stator ball'},
+        {title: 'Step 6 — Servo clevis', desc: 'Clevis linking pushrod to nozzle arm'},
+        {title: 'Step 7 — Port trim', desc: 'Trim screwed on the transom, port side'},
+        {title: 'Step 8 — Starboard trim', desc: 'Trim screwed on the transom, starboard side'},
+        {title: 'Step 9 — Cover', desc: 'Canopy + foam seal, 4× M2 — done 🚤'}
       ]
     };
     let lang = 'fr';
 
-    // Si les pièces proviennent de la même origine CAO, un simple pos: [0,0,0] suffit pour s'emboîter dans les trous
+    /* Positions d'assemblage mesurées directement dans les STL (mm).
+       Repère monde : X = bâbord/tribord, Y = haut, Z = proue (+) / poupe (-).
+       Origine = milieu de la coque, quille à Y = 0.
+       Chaque STL est exporté dans son propre repère d'impression : rot[] le remet
+       dans le repère bateau, pos[] le place sur ses perçages / portées réels.
+         · tableau arrière (transom) plan à Z = -99.95
+         · axe du jet  : X = 0, Y = 15.11  (3 perçages M2 à R16 : ±16 et +16)
+         · rotule du stator : Ø22.5 centrée à Z = -113.29
+         · axe de pivot de tuyère et bras de direction alignés sur le passage
+           de tringle du tableau arrière (X = -9.8, Y = 29.6) */
     const PARTS = [
-      {id: 'hull',   name: {fr: 'Coque', en: 'Hull'},               file: 'boat_hull.STL',           color: 0xff5500, opacity: 1,    pos: [0, 0, 0],       rot: [0, 0, 0],                 explode: [0, -55, 0]},
-      {id: 'stator', name: {fr: 'Stator jet', en: 'Jet stator'},    file: 'models/jet_stator.STL',   color: 0x1a1a1a, opacity: 1,    pos: [0, 0, 0],       rot: [0, 0, 0],                 explode: [0, 30, 80]},
-      {id: 'prop',   name: {fr: 'Hélice', en: 'Propeller'},         file: 'models/jet_propeller.STL',color: 0x333333, opacity: 1,    pos: [0, 0, 0],       rot: [0, 0, 0],                 explode: [0, 50, 60], spin: true},
-      {id: 'nozzle', name: {fr: 'Tuyère', en: 'Nozzle'},            file: 'models/jet_nozzle.STL',   color: 0x1a1a1a, opacity: 1,    pos: [0, 0, 0],       rot: [0, 0, 0],                 explode: [0, 15, 110]},
-      {id: 'clevis', name: {fr: 'Clevis servo', en: 'Servo clevis'},file: 'models/servo_clevis.STL', color: 0x1a1a1a, opacity: 1,    pos: [0, 0, 0],       rot: [0, 0, 0],                 explode: [45, 25, 50]},
-      {id: 'trim15', name: {fr: 'Trim 15°', en: 'Trim 15°'},        file: 'models/boat_trim_15.STL', color: 0x1a1a1a, opacity: 1,    pos: [0, 0, 0],       rot: [0, 0, 0],                 explode: [-55, 5, 0]},
-      {id: 'trim20', name: {fr: 'Trim 20°', en: 'Trim 20°'},        file: 'models/boat_trim_20.STL', color: 0x1a1a1a, opacity: 1,    pos: [0, 0, 0],       rot: [0, 0, 0],                 explode: [55, 5, 0]},
-      {id: 'cover',  name: {fr: 'Couvercle', en: 'Cover'},          file: 'models/boat_cover.STL',   color: 0x182030, opacity: 1,    pos: [0, 0, 0],       rot: [0, 0, 0],                 explode: [0, 90, 0]},
-      {id: 'rc',     name: {fr: 'Support RC', en: 'RC mount'},      file: 'models/rc_mount.STL',     color: 0x333333, opacity: 1,    pos: [0, 0, 0],       rot: [0, 0, 0],                 explode: [0, 50, -30]},
+      {id: 'hull',   name: {fr: 'Coque', en: 'Hull'},                file: 'boat_hull.STL',            color: 0xf4520c, opacity: 1, pos: [-47, -3.79, -100],          rot: [0, 0, 0],                          explode: [0, 0, 0]},
+      {id: 'rc',     name: {fr: 'Support RC', en: 'RC mount'},       file: 'models/rc_mount.STL',      color: 0x3a4048, pos: [25.25, 25.50, 6.83],                    rot: [-Math.PI / 2, 0, Math.PI / 2],     opacity: 1, explode: [0, 46, 12]},
+      {id: 'prop',   name: {fr: 'Hélice (impulseur)', en: 'Impeller'}, file: 'models/jet_propeller.STL', color: 0x9aa0a6, pos: [-9.85, 5.46, -99.65],                 rot: [0, 0, 0],                          opacity: 1, explode: [0, 34, -26], spin: true},
+      {id: 'stator', name: {fr: 'Stator jet', en: 'Jet stator'},     file: 'models/jet_stator.STL',    color: 0x1c1c1e, pos: [-18.84, 33.95, -99.95],                 rot: [Math.PI, 0, 0],                    opacity: 1, explode: [0, 0, -42]},
+      {id: 'nozzle', name: {fr: 'Tuyère orientable', en: 'Steering nozzle'}, file: 'models/jet_nozzle.STL', color: 0x1c1c1e, pos: [12.32, 1.12, -111.29],             rot: [0, Math.PI, 0],                    opacity: 1, explode: [0, 0, -84]},
+      {id: 'clevis', name: {fr: 'Chape servo', en: 'Servo clevis'},  file: 'models/servo_clevis.STL',  color: 0x2a2a2e, pos: [-12.20, 24.86, -116.29],                rot: [-Math.PI / 2, 0, -Math.PI / 2],    opacity: 1, explode: [0, 34, -34]},
+      {id: 'trim15', name: {fr: 'Trim bâbord (15°)', en: 'Port trim (15°)'}, file: 'models/boat_trim_15.STL', color: 0x1c1c1e, pos: [-16.912, 6.891, -99.95],         rot: [Math.PI, 0, -2.766277],            opacity: 1, explode: [-42, 12, -26]},
+      {id: 'trim20', name: {fr: 'Trim tribord (20°)', en: 'Starboard trim (20°)'}, file: 'models/boat_trim_20.STL', color: 0x1c1c1e, pos: [32.827, 13.169, -99.95],   rot: [Math.PI, 0, 2.766277],             opacity: 1, explode: [42, 12, -26]},
+      {id: 'cover',  name: {fr: 'Couvercle', en: 'Cover'},           file: 'models/boat_cover.STL',    color: 0x2b3550, pos: [-34.84, 34.91, 44.03],                  rot: [-Math.PI / 2, 0, 0],               opacity: 1, explode: [0, 62, 0]},
     ];
 
     const scene = new THREE.Scene();
@@ -278,10 +287,23 @@
       const box = new THREE.Box3();
       Object.values(meshes).forEach(m => { if (m.visible) box.expandByObject(m); });
       if (box.isEmpty()) return;
-      const c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3());
-      const d = Math.max(s.x, s.y, s.z) * 1.6;
+      const c = box.getCenter(new THREE.Vector3());
+      const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+      const th = tv * camera.aspect;
+      // vue 3/4 arrière : la propulsion jet reste visible
+      const dir = new THREE.Vector3(0.78, 0.42, -0.72).normalize();
+      const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0)).normalize();
+      const up = new THREE.Vector3().crossVectors(right, dir).normalize();
+      const p = new THREE.Vector3();
+      let dist = 0;
+      for (let i = 0; i < 8; i++) {
+        p.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).sub(c);
+        const depth = p.dot(dir);
+        dist = Math.max(dist, depth + Math.abs(p.dot(right)) / th, depth + Math.abs(p.dot(up)) / tv);
+      }
+      dist *= 1.12;
       controls.target.copy(c);
-      camera.position.set(c.x + d * .7, c.y + d * .45, c.z + d * .7);
+      camera.position.copy(c).addScaledVector(dir, dist);
       controls.update();
     }
 
@@ -300,6 +322,18 @@
     document.getElementById('chk-auto').onchange = e => { autoRotate = e.target.checked; };
     document.getElementById('step-prev').onclick = () => { if (currentStep > 0) { currentStep--; updateStep(); applyBuild(); } };
     document.getElementById('step-next').onclick = () => { if (currentStep < PARTS.length - 1) { currentStep++; updateStep(); applyBuild(); } };
+
+    function setLang(l) {
+      lang = l;
+      document.getElementById('btn-fr').classList.toggle('active', l === 'fr');
+      document.getElementById('btn-en').classList.toggle('active', l === 'en');
+      document.querySelectorAll('#parts-list label').forEach((lab, i) => {
+        lab.lastChild.textContent = ' ' + PARTS[i].name[lang];
+      });
+      updateStep();
+    }
+    document.getElementById('btn-fr').onclick = () => setLang('fr');
+    document.getElementById('btn-en').onclick = () => setLang('en');
 
     window.addEventListener('resize', () => {
       camera.aspect = innerWidth / innerHeight;
