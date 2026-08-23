@@ -148,7 +148,7 @@
     const PARTS = [
       {id: 'hull',   name: {fr: 'Coque', en: 'Hull'},                file: 'boat_hull.STL',            color: 0xf4520c, opacity: 1, pos: [-47, -3.79, -100],          rot: [0, 0, 0],                          explode: [0, 0, 0]},
       {id: 'rc',     name: {fr: 'Support RC', en: 'RC mount'},       file: 'models/rc_mount.STL',      color: 0x3a4048, pos: [25.25, 25.50, 6.83],                    rot: [-Math.PI / 2, 0, Math.PI / 2],     opacity: 1, explode: [0, 46, 12]},
-      {id: 'prop',   name: {fr: 'Hélice (impulseur)', en: 'Impeller'}, file: 'models/jet_propeller.STL', color: 0x9aa0a6, pos: [-9.85, 5.46, -99.65],                 rot: [0, 0, 0],                          opacity: 1, explode: [0, 34, -26], spin: true},
+      {id: 'prop',   name: {fr: 'Hélice (impulseur)', en: 'Impeller'}, file: 'models/jet_propeller.STL', color: 0x9aa0a6, pos: [0, 15.11, -99.65],   pivot: [9.85, 9.85, 0], rot: [0, 0, 0],                          opacity: 1, explode: [0, 34, -26], spin: true},
       {id: 'stator', name: {fr: 'Stator jet', en: 'Jet stator'},     file: 'models/jet_stator.STL',    color: 0x1c1c1e, pos: [-18.84, 33.95, -99.95],                 rot: [Math.PI, 0, 0],                    opacity: 1, explode: [0, 0, -42]},
       {id: 'nozzle', name: {fr: 'Tuyère orientable', en: 'Steering nozzle'}, file: 'models/jet_nozzle.STL', color: 0x1c1c1e, pos: [12.32, 1.12, -111.29],             rot: [0, Math.PI, 0],                    opacity: 1, explode: [0, 0, -84]},
       {id: 'clevis', name: {fr: 'Chape servo', en: 'Servo clevis'},  file: 'models/servo_clevis.STL',  color: 0x2a2a2e, pos: [-12.20, 24.86, -116.29],                rot: [-Math.PI / 2, 0, -Math.PI / 2],    opacity: 1, explode: [0, 34, -34]},
@@ -192,9 +192,14 @@
           part.file,
           geo => {
             geo.computeVertexNormals();
-            
-            // NOTE : geo.center() a été retiré ici pour préserver 
-            // la position d'origine exacte liée au repère CAO global de la coque.
+
+            // Pas de geo.center() : les STL sont placés sur leurs portées réelles,
+            // le repère d'origine de chaque maillage est donc conservé tel quel.
+            // Exception : une pièce tournante doit avoir son axe sur l'origine du
+            // maillage, sinon elle décrit un cercle au lieu de tourner sur elle-même.
+            // pivot[] = point du repère STL ramené à l'origine ; pos[] donne alors
+            // directement la position monde de ce point.
+            if (part.pivot) geo.translate(-part.pivot[0], -part.pivot[1], -part.pivot[2]);
             
             const tr = part.opacity < 1;
             const mat = new THREE.MeshLambertMaterial({
@@ -342,11 +347,15 @@
     });
 
     const clock = new THREE.Clock();
+    let spinAngle = 0;
     function animate() {
       requestAnimationFrame(animate);
       const dt = clock.getDelta();
-      const prop = meshes.prop;
-      if (prop && prop.visible) prop.rotation.z += dt * 12;
+      spinAngle += dt * 12;
+      PARTS.forEach(p => {
+        const m = meshes[p.id];
+        if (p.spin && m) m.rotation.z = p.rot[2] + spinAngle;
+      });
       controls.autoRotate = autoRotate;
       controls.update();
       renderer.render(scene, camera);
