@@ -8,15 +8,20 @@ Visualiseur 3D interactif du **RC Mini Jet Boat** conçu par [jtronics](https://
 
 ## Fonctionnalités
 
-| Mode | Description |
+Au chargement, **les 54 pièces sont posées à plat sur le plan de travail**.
+Le bouton **Assembler** les fait converger vers leur position de montage,
+dans l’ordre du montage réel ; **Démonter** rejoue l’animation à l’envers.
+
+| Commande | Description |
 |------|-------------|
-| **Assemblé** | Vue complète avec matériaux PBR |
-| **Éclaté** | Slider pour écarter toutes les pièces |
-| **Build pas-à-pas** | 9 étapes d’assemblage avec highlight de la pièce courante |
-| Arbre d’assemblage | Afficher / masquer chaque pièce individuellement |
-| Mode filaire + arêtes | Inspection CAO |
+| **Assembler / Démonter** | Animation de montage, pièce par pièce |
+| **Progression** | Curseur pour parcourir le montage image par image |
+| **Éclatement** | Écarte les pièces depuis le bateau monté |
+| Inventaire | Afficher / masquer chaque ligne de nomenclature, avec quantités |
+| Filaire | Inspection CAO |
 | Auto-rotation | Présentation continue |
-| Vues prédéfinies | ISO, dessus, dessous, faces, reset |
+| Plan de travail | Grille de la table de montage |
+| Hélice animée | L’impulseur tourne une fois le bateau monté |
 | Bilingue | FR / EN |
 
 ## Lancer localement
@@ -36,7 +41,7 @@ Sous Windows : double-cliquer `lancer_visualiseur.bat` ou `lancer_visualiseur.ps
 
 ```
 JETBOAT/
-├── index.html                 # Visualiseur Three.js (STLLoader)
+├── index.html                 # Visualiseur Three.js (STL + pièces paramétriques)
 ├── README.md
 ├── readme.txt                 # Guide original jtronics (montage + BOM)
 ├── lancer_visualiseur.bat
@@ -87,6 +92,39 @@ Références mesurées utilisées pour le calage :
 
 Longueur totale obtenue coque + stator + tuyère : **230 mm**, conforme au readme
 d’origine de jtronics.
+
+### Nomenclature modélisée
+
+Les 8 STL de jtronics ne couvrent que les pièces imprimées. La visserie,
+la transmission et l’électronique de la partlist sont **générées
+paramétriquement** dans `index.html` à leurs cotes réelles, et posées sur les
+points de fixation relevés dans la coque :
+
+| Point relevé dans `boat_hull.STL` | Sert à |
+|---|---|
+| 4 bossages Ø3.25, entraxes 45 / 50 mm, dessus à `Y = 39.6` | inserts + vis du couvercle |
+| 2 bossages Ø3.25 sur l’axe, entraxe 40 mm, dessus à `Y = 29.4` | inserts + vis du support électronique |
+| 2 trous Ø1.8 à `X = 48.6`, entraxe 19.5 mm, tablette à `Y = 31.57` | vis + pattes du servo |
+| 2 trous Ø2.6 à `X = 39 / 55`, `Z = 106`, entraxe **16 mm** | vis + platine du moteur |
+| Chambre Ø2.78 de `Z = 58` à `76`, sièges Ø5 aux extrémités | 2 paliers laiton + graisse |
+| Trou Ø1.8 à `(47, 25.57, 74.3)`, débouchant dans cette chambre | vis d’huile M2×8 |
+| Passage Ø2.25 du tableau arrière à `(37.2, 33.4)` | tube laiton + tringle de servo |
+| 3 trous M2 à R16 autour de l’axe du jet | vis M2×8 du stator |
+| 2 × 2 trous M2 en bas du tableau, entraxe 6 mm | trims |
+
+L’entraxe moteur relevé (16 mm) correspond exactement à la cote « vis 16 mm »
+annoncée dans la partlist, et la tige Ø2×100 couvre bien la distance
+accouplement → impulseur.
+
+Deux réserves, à ne pas prendre pour des cotes relevées :
+
+- **Vis M2×8** : la partlist en annonce 6 mais n’en détaille que 4
+  (3 stator + 1 huile). Seules ces 4 sont placées.
+- **Position de l’électronique** (ESC, BEC, récepteur, accus, câblage) : la
+  coque n’a pas de logement dédié pour ces éléments. Ils sont posés dans les
+  bacs latéraux et sur la platine, aux bonnes dimensions mais à un
+  emplacement **indicatif**. Le moteur, le servo, la transmission et toute la
+  visserie sont, eux, calés sur des perçages mesurés.
 
 ## Guide de montage (extrait de readme.txt)
 
