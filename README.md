@@ -106,25 +106,38 @@ points de fixation relevés dans la coque :
 | 2 bossages Ø3.25 sur l’axe, entraxe 40 mm, dessus à `Y = 29.4` | inserts + vis du support électronique |
 | 2 trous Ø1.8 à `X = 48.6`, entraxe 19.5 mm, tablette à `Y = 31.57` | vis + pattes du servo |
 | 2 trous Ø2.6 à `X = 39 / 55`, `Z = 106`, entraxe **16 mm** | vis + platine du moteur |
+| 2 gouttières Ø18.68 (!), axes `(25.90, 22.72)` et `(68.10, 22.72)` | logement des accus 18650 |
 | Chambre Ø2.78 de `Z = 58` à `76`, sièges Ø5 aux extrémités | 2 paliers laiton + graisse |
 | Trou Ø1.8 à `(47, 25.57, 74.3)`, débouchant dans cette chambre | vis d’huile M2×8 |
 | Passage Ø2.25 du tableau arrière à `(37.2, 33.4)` | tube laiton + tringle de servo |
 | 3 trous M2 à R16 autour de l’axe du jet | vis M2×8 du stator |
 | 2 × 2 trous M2 en bas du tableau, entraxe 6 mm | trims |
 
-L’entraxe moteur relevé (16 mm) correspond exactement à la cote « vis 16 mm »
-annoncée dans la partlist, et la tige Ø2×100 couvre bien la distance
-accouplement → impulseur.
+Trois recoupements valident le calage : l’entraxe moteur relevé fait
+**exactement 16 mm**, la cote « vis 16 mm » de la partlist ; le diamètre des
+deux gouttières fait **Ø18.68 mm**, soit le diamètre d’un 18650 ; et la tige
+Ø2×100 couvre exactement la distance accouplement → impulseur.
+
+**Accus** : les gouttières sont ouvertes vers le haut sur 135° (on y clipse la
+cellule par le dessus) et fermées à l’arrière par le tableau, à `Z = 0.72` :
+l’accu vient en butée sur ce fond, et occupe donc `Z = 2` à `67`.
+
+**Servo** : il est **couché sur le flanc**, axe long selon la longueur du
+bateau. C’est ce que montre la photo de montage de jtronics, et c’est la seule
+orientation compatible avec les deux perçages relevés — ils sont distants de
+19.5 mm *selon la longueur*, donc les pattes débordent à l’avant et à
+l’arrière. L’arbre de sortie est de ce fait horizontal et pointe vers bâbord :
+la corne balaie le plan vertical longitudinal et pousse la tringle d’avant en
+arrière, jusqu’au passage Ø2.25 du tableau.
 
 Deux réserves, à ne pas prendre pour des cotes relevées :
 
 - **Vis M2×8** : la partlist en annonce 6 mais n’en détaille que 4
   (3 stator + 1 huile). Seules ces 4 sont placées.
-- **Position de l’électronique** (ESC, BEC, récepteur, accus, câblage) : la
-  coque n’a pas de logement dédié pour ces éléments. Ils sont posés dans les
-  bacs latéraux et sur la platine, aux bonnes dimensions mais à un
-  emplacement **indicatif**. Le moteur, le servo, la transmission et toute la
-  visserie sont, eux, calés sur des perçages mesurés.
+- **Position de l’ESC, du BEC et du récepteur** : la coque n’a pas de logement
+  dédié pour ces trois éléments. Ils sont posés sur la platine aux bonnes
+  dimensions, mais à un emplacement **indicatif**. Tout le reste — accus,
+  moteur, servo, transmission, visserie — est calé sur des relevés.
 
 ## Guide de montage (extrait de readme.txt)
 
