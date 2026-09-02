@@ -35,6 +35,8 @@
     .btn-row { display: flex; gap: 5px; flex-wrap: wrap }
     button { background: #21262d; border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: .78rem; cursor: pointer }
     button:hover { background: #30363d }
+    button:disabled { opacity: .35; cursor: default }
+    button:disabled:hover { background: #21262d }
     button.active { background: var(--accent); border-color: var(--accent); color: #0d1117; font-weight: 600 }
     button.primary { background: var(--accent2); border-color: var(--accent2); color: #0d1117; font-weight: 600; flex: 1 }
     input[type=range] { width: 100%; accent-color: var(--accent) }
@@ -46,6 +48,24 @@
     .grp-title:first-child { margin-top: 0 }
     #phase { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); background: rgba(22,27,34,.96); border: 1px solid var(--border); border-radius: 10px; padding: 8px 16px; z-index: 20; font-size: .82rem; opacity: 0; transition: opacity .25s; pointer-events: none; white-space: nowrap }
     #phase.on { opacity: 1 }
+    body.guide #phase { display: none }
+
+    /* fiche d'étape du guide */
+    #card { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); width: min(620px, calc(100vw - 40px)); background: rgba(22,27,34,.97); border: 1px solid var(--border); border-radius: 12px; z-index: 21; display: none; box-shadow: 0 10px 34px rgba(0,0,0,.45) }
+    body.guide #card { display: block }
+    #card .bar { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--border) }
+    #card .bar .num { font-size: .68rem; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; white-space: nowrap }
+    #card .bar .ttl { font-weight: 650; font-size: .95rem; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+    #card .bar button { width: 30px; height: 28px; padding: 0; flex: none }
+    #card .body { padding: 11px 13px 13px; max-height: 34vh; overflow-y: auto }
+    #card .body p { font-size: .82rem; line-height: 1.5 }
+    #card .tip { margin-top: 9px; font-size: .76rem; line-height: 1.45; color: #ffd0ad; background: rgba(255,85,0,.09); border-left: 2px solid var(--accent); padding: 7px 10px; border-radius: 0 6px 6px 0 }
+    #card .tip b { color: var(--accent2); font-weight: 600 }
+    #card .bom { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px }
+    #card .bom span { font-size: .72rem; background: #21262d; border: 1px solid var(--border); border-radius: 20px; padding: 3px 9px; display: flex; align-items: center; gap: 6px }
+    #card .bom i { width: 8px; height: 8px; border-radius: 2px; display: block }
+    #card .prog { height: 3px; background: #21262d; border-radius: 0 0 11px 11px; overflow: hidden }
+    #card .prog i { display: block; height: 100%; background: var(--accent); transition: width .3s }
     #lang { position: absolute; top: 10px; right: 10px; z-index: 15; display: flex; gap: 4px }
     #lang button { padding: 4px 9px; font-size: .72rem }
     #loading { position: absolute; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity .45s }
@@ -79,6 +99,9 @@
       </div>
       <h2 style="margin-top:11px"><span data-i18n="h-progress">Progression</span> <span id="asm-val">0%</span></h2>
       <input type="range" id="asm-slider" min="0" max="100" value="0"/>
+      <div class="btn-row" style="margin-top:9px">
+        <button id="btn-guide" class="primary" data-i18n="b-guide">Guide pas-à-pas</button>
+      </div>
     </div>
 
     <div class="section">
@@ -107,6 +130,22 @@
   </div>
 
   <div id="phase"></div>
+
+  <div id="card">
+    <div class="bar">
+      <button id="st-prev" title="←">◀</button>
+      <span class="num" id="st-num"></span>
+      <span class="ttl" id="st-title"></span>
+      <button id="st-next" title="→">▶</button>
+      <button id="st-quit" title="Esc">✕</button>
+    </div>
+    <div class="body">
+      <p id="st-desc"></p>
+      <div class="bom" id="st-bom"></div>
+      <div class="tip"><b id="st-tiplabel"></b> <span id="st-tip"></span></div>
+    </div>
+    <div class="prog"><i id="st-prog"></i></div>
+  </div>
 
   <div id="lang">
     <button id="btn-fr" class="active">FR</button>
@@ -156,7 +195,9 @@
         'c-wire':'Filaire','c-auto':'Auto-rotation','c-grid':'Plan de travail','c-spin':'Hélice animée',
         'n-explode':'Écarte les pièces depuis le bateau monté.',
         'g-print':'Pièces imprimées','g-drive':'Transmission','g-elec':'Électronique',
-        'g-fix':'Visserie & joints',
+        'g-fix':'Visserie & joints','g-case':'Boîte de rangement',
+        'h-guide':'Guide de montage','b-guide':'Guide pas-à-pas','b-quit':'Quitter le guide',
+        'g-step':'Étape','g-of':'sur','g-bom':'Pièces de l’étape','g-tip':'À surveiller',
         'ph-flat':'Pièces à plat','ph-done':'Bateau monté',
         'ui-hide':'Masquer le panneau (P)','ui-show':'Afficher le panneau (P)'
       },
@@ -167,7 +208,9 @@
         'c-wire':'Wireframe','c-auto':'Auto-rotate','c-grid':'Workbench','c-spin':'Spin impeller',
         'n-explode':'Spreads the parts out from the assembled boat.',
         'g-print':'Printed parts','g-drive':'Drivetrain','g-elec':'Electronics',
-        'g-fix':'Fasteners & seals',
+        'g-fix':'Fasteners & seals','g-case':'Storage case',
+        'h-guide':'Build guide','b-guide':'Step-by-step','b-quit':'Leave guide',
+        'g-step':'Step','g-of':'of','g-bom':'Parts for this step','g-tip':'Watch out',
         'ph-flat':'Parts laid out','ph-done':'Boat assembled',
         'ui-hide':'Hide panel (P)','ui-show':'Show panel (P)'
       }
@@ -246,13 +289,17 @@
      *  `at` liste les positions de montage (repère coque).
      * ------------------------------------------------------------------ */
     const PARTS = [
+      /* --- pièces imprimées --------------------------------------------- */
       { id:'hull', grp:'g-print', name:{fr:'Coque',en:'Hull'}, file:'boat_hull.STL',
         color:0xf4520c, lay:'up', explode:[0,0,0], at:[{pos:[0,0,0]}] },
 
-      { id:'ins', grp:'g-fix', name:{fr:'Inserts laiton M2×3',en:'M2×3 brass inserts'},
+      { id:'ins_cover', grp:'g-fix', name:{fr:'Inserts M2×3 (couvercle)',en:'M2×3 inserts (cover)'},
         geo:insertGeo, color:0xc9a227, lay:'up',
-        at:[{pos:[22,39.6,113.2]},{pos:[72,39.6,113.2]},{pos:[24.5,39.6,25]},{pos:[69.5,39.6,25]},
-            {pos:[47,29.4,63.6]},{pos:[47,29.4,103.6]}] },
+        at:[{pos:[22,39.6,113.2]},{pos:[72,39.6,113.2]},{pos:[24.5,39.6,25]},{pos:[69.5,39.6,25]}] },
+
+      { id:'ins_elec', grp:'g-fix', name:{fr:'Inserts M2×3 (platine)',en:'M2×3 inserts (tray)'},
+        geo:insertGeo, color:0xc9a227, lay:'up',
+        at:[{pos:[47,29.4,63.6]},{pos:[47,29.4,103.6]}] },
 
       { id:'bearing', grp:'g-drive', name:{fr:'Paliers laiton Ø5 (52B)',en:'Brass bearings Ø5 (52B)'},
         geo:()=>tubeGeo(5,2.4), color:0xc9a227, lay:'flat',
@@ -267,26 +314,49 @@
       { id:'motor', grp:'g-drive', name:{fr:'Moteur brushless BE1806',en:'BE1806 brushless motor'},
         geo:motorGeo, color:0x8d939b, lay:'flat', at:[{pos:[47,18.9,106], rot:[R2,0,0]}] },
 
+      { id:'m2x6_motor', grp:'g-fix', name:{fr:'Vis M2×6 (moteur)',en:'M2×6 screws (motor)'},
+        geo:()=>screwGeo(6), color:0xd8dde3, lay:'flat',
+        at:[{pos:[39,18.9,105], rot:[-R2,0,0]},{pos:[55,18.9,105], rot:[-R2,0,0]}] },
+
       { id:'mshaft', grp:'g-drive', name:{fr:'Arbre moteur Ø2×30',en:'Motor shaft Ø2×30'},
         geo:()=>tubeGeo(2,30), color:0xb9bec4, lay:'flat', at:[{pos:[47,18.9,106], rot:[R2,0,0]}] },
 
       { id:'coupler', grp:'g-drive', name:{fr:'Accouplement 2 mm / 2 mm',en:'Shaft coupler 2/2 mm'},
         geo:couplerGeo, color:0x9099a3, lay:'flat', at:[{pos:[47,18.9,91], rot:[R2,0,0]}] },
 
+      { id:'grub_coupler', grp:'g-fix', name:{fr:'Vis sans tête M2×3 (accouplement)',en:'M2×3 grub screws (coupler)'},
+        geo:grubGeo, color:0x6f7681, lay:'flat', at:[{pos:[47,21.9,87]},{pos:[47,21.9,95]}] },
+
       { id:'rod', grp:'g-drive', name:{fr:'Tige d’entraînement Ø2×100',en:'Drive rod Ø2×100'},
         geo:()=>tubeGeo(2,100), color:0xb9bec4, lay:'flat', at:[{pos:[47,18.9,41], rot:[R2,0,0]}] },
+
+      { id:'m2x8_oil', grp:'g-fix', name:{fr:'Vis d’huile M2×8',en:'Oil screw M2×8'},
+        geo:()=>screwGeo(8), color:0xd8dde3, lay:'flat', at:[{pos:[47,25.57,74.3]}] },
 
       { id:'prop', grp:'g-print', name:{fr:'Hélice (impulseur)',en:'Impeller'},
         file:'models/jet_propeller.STL', pivot:[9.85,9.85,0], color:0x9aa0a6, lay:'up',
         spin:true, explode:[0,34,-26], at:[{pos:[47,18.9,0.35]}] },
 
+      { id:'grub_prop', grp:'g-fix', name:{fr:'Vis sans tête M2×3 (hélice)',en:'M2×3 grub screws (impeller)'},
+        geo:grubGeo, color:0x6f7681, lay:'flat',
+        at:[{pos:[50,18.9,11.6], rot:[0,0,-R2]},{pos:[44,18.9,11.6], rot:[0,0,R2]}] },
+
       { id:'stator', grp:'g-print', name:{fr:'Stator jet',en:'Jet stator'},
         file:'models/jet_stator.STL', color:0x1c1c1e, lay:'up', explode:[0,0,-42],
         at:[{pos:[28.16,37.74,0.054], rot:[Math.PI,0,0]}] },
 
+      { id:'m2x8_stator', grp:'g-fix', name:{fr:'Vis M2×8 (stator)',en:'M2×8 screws (stator)'},
+        geo:()=>screwGeo(8), color:0xd8dde3, lay:'flat',
+        at:[{pos:[31,18.9,-2.45], rot:[-R2,0,0]},{pos:[63,18.9,-2.45], rot:[-R2,0,0]},
+            {pos:[47,34.9,-2.45], rot:[-R2,0,0]}] },
+
       { id:'nozzle', grp:'g-print', name:{fr:'Tuyère orientable',en:'Steering nozzle'},
         file:'models/jet_nozzle.STL', color:0x1c1c1e, lay:'up', explode:[0,0,-84],
         at:[{pos:[59.32,4.91,-11.286], rot:[0,Math.PI,0]}] },
+
+      { id:'m16x5', grp:'g-fix', name:{fr:'Vis M1.6×5 (pivot de tuyère)',en:'M1.6×5 screws (nozzle pivot)'},
+        geo:()=>screwGeo(5,1.6), color:0xd8dde3, lay:'flat',
+        at:[{pos:[47,32.71,-13.29]},{pos:[47,4.91,-13.29], rot:[Math.PI,0,0]}] },
 
       { id:'clevis', grp:'g-print', name:{fr:'Chape de servo',en:'Servo clevis'},
         file:'models/servo_clevis.STL', color:0x2a2a2e, lay:'up', explode:[0,34,-34],
@@ -295,6 +365,9 @@
       { id:'servorod', grp:'g-elec', name:{fr:'Tringle de servo Ø1',en:'Servo pushrod Ø1'},
         geo:()=>pathGeo([[36.0,34.3,42.3],[36.6,33.9,26],[37.2,33.4,10],[37.2,33.4,4],[36.9,31.6,1]],.5),
         color:0xb9bec4, lay:'up', at:[{pos:[0,0,0]}] },
+
+      { id:'grub_horn', grp:'g-fix', name:{fr:'Vis sans tête M2×3 (corne)',en:'M2×3 grub screws (horn)'},
+        geo:grubGeo, color:0x6f7681, lay:'flat', at:[{pos:[36.0,36.2,42.5]},{pos:[36.0,36.2,39.5]}] },
 
       { id:'trim15', grp:'g-print', name:{fr:'Trim bâbord (15°)',en:'Port trim (15°)'},
         file:'models/boat_trim_15.STL', color:0x1c1c1e, lay:'up', explode:[-42,12,-26],
@@ -307,14 +380,21 @@
       { id:'servo', grp:'g-elec', name:{fr:'Servo 2 g',en:'2 g servo'},
         geo:servoGeo, color:0x2b2f36, lay:'up', at:[{pos:[48.6,31.57,47.05]}] },
 
+      { id:'m2x6_servo', grp:'g-fix', name:{fr:'Vis M2×6 (servo)',en:'M2×6 screws (servo)'},
+        geo:()=>screwGeo(6), color:0xd8dde3, lay:'flat',
+        at:[{pos:[48.6,33.17,37.3]},{pos:[48.6,33.17,56.8]}] },
+
       { id:'rcmount', grp:'g-print', name:{fr:'Support électronique',en:'Electronics tray'},
         file:'models/rc_mount.STL', color:0x3a4048, lay:'flip', explode:[0,46,12],
         at:[{pos:[72.25,29.29,106.83], rot:[-R2,0,R2]}] },
 
-      /* Logements relevés dans la coque : deux gouttières cylindriques
-         Ø18.68 (la cote exacte d'un 18650), axes à (25.90, 22.72) et
-         (68.10, 22.72), ouvertes vers le haut sur 135° et fermées à l'arrière
-         par le tableau (Z = 0.72). L'accu vient donc en butée sur ce fond. */
+      { id:'m2x6_elec', grp:'g-fix', name:{fr:'Vis M2×6 (platine)',en:'M2×6 screws (tray)'},
+        geo:()=>screwGeo(6), color:0xd8dde3, lay:'flat',
+        at:[{pos:[47,35.6,63.6]},{pos:[47,35.6,103.6]}] },
+
+      /* Gouttières relevées dans la coque : Ø18.68 — le diamètre exact d’un
+         18650 — axes (25.90, 22.72) et (68.10, 22.72), fermées à l’arrière par
+         le tableau à Z = 0.72, sur lequel l’accu vient en butée.             */
       { id:'battery', grp:'g-elec', name:{fr:'Accus 18650 3400 mAh',en:'18650 cells 3400 mAh'},
         geo:batteryGeo, color:0x2f6f4e, lay:'flat',
         at:[{pos:[25.90,22.72,34.60], rot:[R2,0,0]}, {pos:[68.10,22.72,34.60], rot:[R2,0,0]}] },
@@ -331,34 +411,155 @@
       { id:'wires', grp:'g-elec', name:{fr:'Câblage',en:'Wiring'},
         geo:wireGeo, color:0x24272c, lay:'up', at:[{pos:[0,0,0]}] },
 
-      { id:'grub', grp:'g-fix', name:{fr:'Vis sans tête M2×3',en:'M2×3 grub screws'},
-        geo:grubGeo, color:0x6f7681, lay:'flat',
-        at:[{pos:[50,18.9,11.6], rot:[0,0,-R2]},{pos:[44,18.9,11.6], rot:[0,0,R2]},
-            {pos:[47,21.9,87]},{pos:[47,21.9,95]},
-            {pos:[36.0,36.2,42.5]},{pos:[36.0,36.2,39.5]}] },
-
-      { id:'m2x6', grp:'g-fix', name:{fr:'Vis M2×6',en:'M2×6 screws'},
-        geo:()=>screwGeo(6), color:0xd8dde3, lay:'flat',
-        at:[{pos:[22,41.2,113.2]},{pos:[72,41.2,113.2]},{pos:[24.5,41.2,25]},{pos:[69.5,41.2,25]},
-            {pos:[48.6,33.17,37.3]},{pos:[48.6,33.17,56.8]},
-            {pos:[47,35.6,63.6]},{pos:[47,35.6,103.6]},
-            {pos:[39,18.9,105], rot:[-R2,0,0]},{pos:[55,18.9,105], rot:[-R2,0,0]}] },
-
-      { id:'m2x8', grp:'g-fix', name:{fr:'Vis M2×8',en:'M2×8 screws'},
-        geo:()=>screwGeo(8), color:0xd8dde3, lay:'flat',
-        at:[{pos:[31,18.9,-2.45], rot:[-R2,0,0]},{pos:[63,18.9,-2.45], rot:[-R2,0,0]},
-            {pos:[47,34.9,-2.45], rot:[-R2,0,0]},{pos:[47,25.57,74.3]}] },
-
-      { id:'m16x5', grp:'g-fix', name:{fr:'Vis M1.6×5',en:'M1.6×5 screws'},
-        geo:()=>screwGeo(5,1.6), color:0xd8dde3, lay:'flat',
-        at:[{pos:[47,32.71,-13.29]},{pos:[47,4.91,-13.29], rot:[Math.PI,0,0]}] },
-
       { id:'seal', grp:'g-fix', name:{fr:'Joint mousse Ø2',en:'Ø2 foam seal'},
         geo:sealGeo, color:0x30343a, lay:'up', at:[{pos:[0,0,0]}] },
 
       { id:'cover', grp:'g-print', name:{fr:'Couvercle',en:'Cover'},
-        file:'models/boat_cover.STL', color:0x2b3550, lay:'flip', explode:[0,62,0],
-        at:[{pos:[12.16,38.70,144.03], rot:[-R2,0,0]}] }
+        file:'models/boat_cover_turn.STL', color:0x2b3550, lay:'flip', explode:[0,62,0],
+        at:[{pos:[12.16,38.70,144.03], rot:[-R2,0,0]}] },
+
+      { id:'m2x6_cover', grp:'g-fix', name:{fr:'Vis M2×6 (couvercle)',en:'M2×6 screws (cover)'},
+        geo:()=>screwGeo(6), color:0xd8dde3, lay:'flat',
+        at:[{pos:[22,41.2,113.2]},{pos:[72,41.2,113.2]},{pos:[24.5,41.2,25]},{pos:[69.5,41.2,25]}] },
+
+      /* --- boîte de rangement / de vente ---------------------------------
+         Générée par CSG (voir tools/case_gen.py). Repère de la pièce déjà
+         orienté pour l’impression : X = longueur, Y = largeur, Z = hauteur.
+         L’intérieur est calé sur l’encombrement réel, pas sur la coque : la
+         tuyère descend à Z = -130.5 quand l’étrave s’arrête à +100.
+         Décochées au chargement : la vue par défaut reste le bateau.       */
+      { id:'case_base', grp:'g-case', name:{fr:'Bac de rangement',en:'Storage tray'},
+        file:'models/case_base.STL', color:0xc07a2e, lay:'up', optional:true,
+        explode:[0,-72,0], at:[{pos:[-3.2,-14.21,-38.4], rot:[-R2,0,-R2]}] },
+
+      { id:'case_lid', grp:'g-case', name:{fr:'Couvercle de boîte',en:'Case lid'},
+        file:'models/case_lid.STL', color:0xb06e26, lay:'flip', optional:true,
+        explode:[0,96,0], at:[{pos:[-3.2,35.79,-38.4], rot:[-R2,0,-R2]}] },
+
+      { id:'m3x20', grp:'g-case', name:{fr:'Vis M3×20 (boîte)',en:'M3×20 screws (case)'},
+        geo:()=>screwGeo(20,3), color:0xd8dde3, lay:'flat', optional:true,
+        at:[{pos:[7.8,70.59,-27.4]},{pos:[7.8,70.59,201.0]},
+            {pos:[118.2,70.59,-27.4]},{pos:[118.2,70.59,201.0]}] },
+    ];
+
+    /* ------------------------------------------------------------------ *
+     *  GUIDE DE MONTAGE
+     *  Chaque étape liste les pièces qu'elle installe, et l'angle sous lequel
+     *  la caméra doit se placer. `az` = azimut (0 = de la proue, 180 = de la
+     *  poupe), `el` = élévation, `pad` = marge de cadrage.
+     * ------------------------------------------------------------------ */
+    const STEPS = [
+      { parts:['hull'], az:150, el:34, pad:1.15,
+        t:{fr:'Coque',en:'Hull'},
+        d:{fr:'Imprimer la coque pont vers le haut. Hauteur de construction nécessaire : plus de 200 mm. PLA, couches adaptatives 0.10–0.20 mm, aucun support.',
+           en:'Print the hull deck up. Needs over 200 mm of build height. PLA, adaptive layers 0.10–0.20 mm, no supports.'},
+        tip:{fr:'C’est l’impression qui décide de l’étanchéité : si les parois sont bien fermées, la coque ne prend pas l’eau. Dans le doute, une couche fine de vernis auto.',
+             en:'Waterproofing is decided at print time: sound walls keep the water out. If unsure, a thin coat of car clear coat.'} },
+
+      { parts:['ins_cover','ins_elec'], az:158, el:62, pad:1.25,
+        t:{fr:'Inserts laiton',en:'Brass inserts'},
+        d:{fr:'Poser les 6 inserts M2×3 au fer : 4 sur les bossages du couvercle (entraxes 45 et 50 mm), 2 sur ceux de la platine (entraxe 40 mm).',
+           en:'Heat-set the 6 M2×3 inserts: 4 on the cover bosses (45 and 50 mm centres), 2 on the tray bosses (40 mm centres).'},
+        tip:{fr:'Enfoncer bien perpendiculaire et araser au niveau du bossage : un insert de travers fait forcer le couvercle et ruine l’étanchéité.',
+             en:'Push in square and flush with the boss: a skewed insert cocks the cover and ruins the seal.'} },
+
+      { parts:['bearing','jetbush','servotube'], az:196, el:26, pad:1.5,
+        t:{fr:'Paliers et tubes laiton',en:'Bearings and brass tubes'},
+        d:{fr:'Deux paliers Ø5 aux extrémités du tunnel d’arbre (Z = 57 et 77), le tube Ø3×3 dans le moyeu avant du stator, le tube Ø2×10 dans le passage de tringle du tableau.',
+           en:'Two Ø5 bushings at each end of the shaft tunnel (Z = 57 and 77), the Ø3×3 tube in the stator front hub, the Ø2×10 tube in the transom pushrod passage.'},
+        tip:{fr:'Entre les deux paliers se trouve la chambre à graisse : c’est elle qui étanche l’arbre. Ne pas la boucher.',
+             en:'The grease chamber sits between the two bushings — that is what seals the shaft. Do not block it.'} },
+
+      { parts:['motor','m2x6_motor'], az:120, el:38, pad:1.6,
+        t:{fr:'Moteur',en:'Motor'},
+        d:{fr:'Le moteur se boulonne sur la cloison par deux vis M2×6, entraxe 16 mm, corps vers l’avant. L’arbre traverse la cloison vers l’arrière.',
+           en:'The motor bolts to the bulkhead with two M2×6 screws on 16 mm centres, body forward. The shaft passes aft through the bulkhead.'},
+        tip:{fr:'Diamètre maxi 23 mm, longueur ≈ 18 mm. Un moteur plus long ne passe pas sous le capot.',
+             en:'23 mm diameter max, about 18 mm long. A longer motor will not clear the canopy.'} },
+
+      { parts:['mshaft','coupler','grub_coupler','rod','m2x8_oil'], az:170, el:30, pad:1.35,
+        t:{fr:'Ligne d’arbre',en:'Drivetrain'},
+        d:{fr:'Arbre moteur Ø2×30, accouplement serré par deux vis sans tête, puis la tige Ø2×100 qui court jusqu’à l’impulseur. Remplir la chambre de graisse et fermer par la vis d’huile M2×8.',
+           en:'Ø2×30 motor shaft, coupler clamped by two grub screws, then the Ø2×100 rod running to the impeller. Pack the chamber with grease and close it with the M2×8 oil screw.'},
+        tip:{fr:'Tout doit tourner à la main sans point dur. Un désalignement ici s’entend et se paie en autonomie.',
+             en:'Everything must spin freely by hand. Misalignment here is audible and costs run time.'} },
+
+      { parts:['prop','grub_prop'], az:200, el:18, pad:1.9,
+        t:{fr:'Impulseur',en:'Impeller'},
+        d:{fr:'L’impulseur Ø19.5 se glisse dans le tunnel, ogive vers l’avant, pales au ras de l’entrée du stator. Deux vis sans tête M2×3 le bloquent sur la tige.',
+           en:'The Ø19.5 impeller slides into the tunnel, nose cone forward, blades flush with the stator inlet. Two M2×3 grub screws lock it to the rod.'},
+        tip:{fr:'Le jeu en bout de pale n’est que de 0.3 mm : ébavurer le tunnel avant de monter.',
+             en:'Blade tip clearance is only 0.3 mm — deburr the tunnel before fitting.'} },
+
+      { parts:['stator','m2x8_stator'], az:205, el:20, pad:1.7,
+        t:{fr:'Stator',en:'Stator'},
+        d:{fr:'Le stator se plaque sur le tableau arrière, sa troisième patte vers le haut, et se fixe par trois vis M2×8 réparties à R16 autour de l’axe du jet.',
+           en:'The stator seats against the transom with its third lug up, held by three M2×8 screws on a 16 mm radius around the jet axis.'},
+        tip:{fr:'Les 3 perçages ne sont pas symétriques : une seule orientation tombe juste. Si ça ne tombe pas, c’est qu’il est à l’envers.',
+             en:'The 3 holes are not symmetric: only one orientation lines up. If it does not, it is upside down.'} },
+
+      { parts:['nozzle','m16x5'], az:212, el:16, pad:1.7,
+        t:{fr:'Tuyère orientable',en:'Steering nozzle'},
+        d:{fr:'La tuyère s’emboîte sur la rotule Ø22.5 du stator et pivote sur deux vis M1.6×5, une en haut, une en bas.',
+           en:'The nozzle clips onto the stator’s Ø22.5 ball and pivots on two M1.6×5 screws, one top, one bottom.'},
+        tip:{fr:'La rotule doit être libre mais sans jeu : trop serré, la direction traîne ; trop lâche, elle vibre.',
+             en:'The ball must move freely but without slop: too tight and steering drags, too loose and it flutters.'} },
+
+      { parts:['clevis','servorod','grub_horn'], az:198, el:34, pad:1.6,
+        t:{fr:'Direction',en:'Steering linkage'},
+        d:{fr:'La tringle Ø1 sort du tube laiton du tableau, la chape la relie au bras de la tuyère. Deux vis sans tête la bloquent sur la corne de servo.',
+           en:'The Ø1 pushrod exits the transom brass tube and the clevis links it to the nozzle arm. Two grub screws lock it to the servo horn.'},
+        tip:{fr:'Régler la longueur servo au neutre, tuyère droite. Ajuster ensuite au trim de l’émetteur, pas en forçant la tringle.',
+             en:'Set the length with the servo centred and the nozzle straight. Fine-tune on the transmitter trim, not by forcing the rod.'} },
+
+      { parts:['trim15','trim20'], az:225, el:30, pad:1.5,
+        t:{fr:'Trims',en:'Trims'},
+        d:{fr:'Les deux trims se vissent en bas du tableau arrière, sur des perçages inclinés à l’angle de carène. Ils débordent de 21 mm vers l’arrière.',
+           en:'The two trims screw to the bottom of the transom, on holes canted to the hull deadrise. They overhang 21 mm aft.'},
+        tip:{fr:'15° et 20° sont deux variantes d’angle de la même pièce : en vrai on imprime deux fois la même. Le visualiseur en montre une par bord.',
+             en:'15° and 20° are two angle variants of the same part — in reality you print the same one twice. The viewer shows one per side.'} },
+
+      { parts:['servo','m2x6_servo'], az:150, el:44, pad:1.7,
+        t:{fr:'Servo',en:'Servo'},
+        d:{fr:'Le servo se pose couché sur le flanc, axe long dans la longueur du bateau, pattes débordant à l’avant et à l’arrière, deux vis M2×6 dans la tablette.',
+           en:'The servo lies on its side, long axis fore-and-aft, tabs overhanging front and back, two M2×6 screws into the shelf.'},
+        tip:{fr:'Couché, son arbre pointe vers bâbord : la corne balaie le plan vertical et pousse la tringle d’avant en arrière. Debout, rien ne tombe en face.',
+             en:'On its side the output shaft points to port: the horn sweeps the vertical plane and pushes the rod fore and aft. Upright, nothing lines up.'} },
+
+      { parts:['rcmount','m2x6_elec'], az:145, el:48, pad:1.5,
+        t:{fr:'Platine électronique',en:'Electronics tray'},
+        d:{fr:'La platine se pose sur les deux bossages de l’axe, entraxe 40 mm, et se fixe par deux vis M2×6 dans les inserts.',
+           en:'The tray sits on the two centreline bosses, 40 mm apart, and is held by two M2×6 screws into the inserts.'},
+        tip:{fr:'La lumière centrale sert au passage des câbles : router avant de visser, on n’y revient pas facilement.',
+             en:'The central slot is for cable routing: run them before screwing down, it is awkward to revisit.'} },
+
+      { parts:['battery','esc','bec','rx','wires'], az:140, el:52, pad:1.25,
+        t:{fr:'Accus et électronique',en:'Cells and electronics'},
+        d:{fr:'Les deux 18650 se clipsent dans leurs gouttières Ø18.6, en butée sur le tableau. ESC, BEC et récepteur prennent place sur la platine.',
+           en:'The two 18650 cells clip into their Ø18.6 troughs, butted against the transom. ESC, BEC and receiver sit on the tray.'},
+        tip:{fr:'Les gouttières sont ouvertes sur 135° : la cellule entre par le haut. Position des accus mesurée ; celle de l’ESC, du BEC et du récepteur reste indicative.',
+             en:'The troughs open over 135°: the cell drops in from above. Cell positions are measured; ESC, BEC and receiver placement is indicative.'} },
+
+      { parts:['seal','cover','m2x6_cover'], az:160, el:50, pad:1.2,
+        t:{fr:'Étanchéité et capot',en:'Seal and canopy'},
+        d:{fr:'Poser le cordon mousse Ø2 sur la portée (≈ 294 mm de contour), puis le capot, serré par quatre vis M2×6 dans les inserts.',
+           en:'Lay the Ø2 foam cord on the sealing face (about 294 mm around), then the canopy, held by four M2×6 screws into the inserts.'},
+        tip:{fr:'Serrer en croix et sans forcer : le joint doit être comprimé régulièrement, pas écrasé sur un seul bord.',
+             en:'Tighten crosswise and gently: the cord should be evenly compressed, not crushed on one edge.'} },
+
+      { parts:['case_base'], az:135, el:42, pad:1.1,
+        t:{fr:'Bac de rangement',en:'Storage tray'},
+        d:{fr:'Le bac reçoit le bateau sur trois berceaux découpés d’après les sections réelles de la coque. Le compartiment latéral, cloisonné en trois, prend les accessoires.',
+           en:'The tray takes the boat on three cradles cut from the hull’s real sections. The side compartment, split in three, holds the accessories.'},
+        tip:{fr:'250 × 132 mm d’emprise : sur un plateau 220 × 220, imprimer en diagonale. Parois 3.2 mm, aucun support.',
+             en:'250 × 132 mm footprint: on a 220 × 220 bed, print it diagonally. 3.2 mm walls, no supports.'} },
+
+      { parts:['case_lid','m3x20'], az:130, el:38, pad:1.1,
+        t:{fr:'Fermeture',en:'Closing up'},
+        d:{fr:'Le couvercle s’emboîte par sa jupe de 8 mm et se serre par quatre vis M3×20 dans les angles. Patins et empreintes permettent de gerber les boîtes.',
+           en:'The lid engages with its 8 mm skirt and is clamped by four M3×20 screws at the corners. Feet and recesses let the cases stack.'},
+        tip:{fr:'S’imprime retourné, dessus sur le plateau : le cartouche d’étiquette et les lamages sortent nets, sans support.',
+             en:'Print it upside down, top face on the bed: the label panel and counterbores come out clean, support-free.'} }
     ];
 
     /* ------------------------------------------------------------------ */
@@ -512,7 +713,10 @@
       if (target === null) return;
       const dir = Math.sign(target - asm);
       asm = THREE.MathUtils.clamp(asm + dir * dt / 3.4, 0, 1);
-      if ((dir > 0 && asm >= target) || (dir < 0 && asm <= target)) { asm = target; target = null; fitCamera(); }
+      if ((dir > 0 && asm >= target) || (dir < 0 && asm <= target)) {
+        asm = target; target = null;
+        if (!guide) fitCamera();
+      }
       setAsm(asm, false);
     }
 
@@ -523,7 +727,7 @@
       document.getElementById('asm-val').textContent = Math.round(asm * 100) + '%';
       apply();
       showPhase();
-      if (stop && (asm <= 0.001 || asm >= 0.999)) fitCamera();
+      if (!guide && stop && (asm <= 0.001 || asm >= 0.999)) fitCamera();
     }
 
     const phaseEl = document.getElementById('phase');
@@ -544,13 +748,23 @@
 
     /* --- cadrage -------------------------------------------------------- */
     let camGoal = null;
+    const DEF_DIR = new THREE.Vector3(0.78, 0.46, -0.72).normalize();
+
     function fitCamera(instant = false) {
       const bb = new THREE.Box3();
       items.forEach(i => { if (i.obj.visible) bb.expandByObject(i.obj); });
+      frame(bb, DEF_DIR, 1.1, instant);
+    }
+    // az = azimut en degrés (0 = vu de la proue, 180 = vu de la poupe), el = élévation
+    const dirOf = (az, el) => {
+      const a = THREE.MathUtils.degToRad(az), e = THREE.MathUtils.degToRad(el);
+      return new THREE.Vector3(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e)).normalize();
+    };
+
+    function frame(bb, dir, pad = 1.1, instant = false) {
       if (bb.isEmpty()) return;
       const c = bb.getCenter(new THREE.Vector3());
       const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2), th = tv * camera.aspect;
-      const dir = new THREE.Vector3(0.78, 0.46, -0.72).normalize();
       const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0)).normalize();
       const up = new THREE.Vector3().crossVectors(right, dir).normalize();
       const p = new THREE.Vector3();
@@ -560,7 +774,7 @@
         const depth = p.dot(dir);
         dist = Math.max(dist, depth + Math.abs(p.dot(right)) / th, depth + Math.abs(p.dot(up)) / tv);
       }
-      const pos = c.clone().addScaledVector(dir, dist * 1.1);
+      const pos = c.clone().addScaledVector(dir, dist * pad);
       if (instant) { controls.target.copy(c); camera.position.copy(pos); controls.update(); camGoal = null; }
       else camGoal = { c, pos };
     }
@@ -573,11 +787,12 @@
     }
 
     /* --- inventaire ----------------------------------------------------- */
-    const GROUPS = ['g-print', 'g-drive', 'g-elec', 'g-fix'];
+    const GROUPS = ['g-print', 'g-drive', 'g-elec', 'g-fix', 'g-case'];
     function buildList() {
       const list = document.getElementById('parts-list');
       list.innerHTML = '';
       let n = 0;
+      PARTS.forEach(p => { if (p.optional) p.objs.forEach(o => o.visible = false); });
       for (const grp of GROUPS) {
         const h = document.createElement('div');
         h.className = 'grp-title'; h.dataset.grp = grp; h.textContent = t(grp);
@@ -586,7 +801,7 @@
           n += part.at.length;
           const lab = document.createElement('label');
           lab.className = 'chk';
-          lab.innerHTML = `<input type="checkbox" checked>
+          lab.innerHTML = `<input type="checkbox"${part.optional ? '' : ' checked'}>
             <span class="sw" style="background:#${part.color.toString(16).padStart(6, '0')}"></span>
             <span class="nm"></span><span class="qty">×${part.at.length}</span>`;
           const nm = lab.querySelector('.nm');
@@ -611,13 +826,119 @@
         e.textContent = PARTS.find(p => p.id === e.dataset.part).name[lang]);
       const off = document.body.classList.contains('ui-off');
       document.getElementById('ui-toggle').title = t(off ? 'ui-show' : 'ui-hide');
+      document.getElementById('btn-guide').textContent = t(guide ? 'b-quit' : 'b-guide');
+      if (guide) renderCard();
       showPhase();
     }
 
+    /* ------------------------------------------------------------------ *
+     *  GUIDE : chaque étape amène le montage jusqu'à ses pièces, masque
+     *  celles qui viennent après, met en valeur celles de l'étape et place
+     *  la caméra sous l'angle qui les montre.
+     * ------------------------------------------------------------------ */
+    let guide = false, step = 0;
+    const stepOf = new Map();          // part.id -> index d'étape
+    STEPS.forEach((s, i) => s.parts.forEach(id => stepOf.set(id, i)));
+
+    function stepEnd(i) {              // avancement d'assemblage en fin d'étape
+      let e = 0;
+      for (const it of items) if (stepOf.get(it.part.id) <= i) e = Math.max(e, it.t1);
+      return e;
+    }
+
+    function stepBox(i) {              // emprise des pièces de l'étape, une fois montées
+      const bb = new THREE.Box3(), one = new THREE.Box3();
+      const p = new THREE.Vector3(), q = new THREE.Quaternion();
+      for (const it of items) {
+        if (stepOf.get(it.part.id) !== i) continue;
+        // les pièces sont peut-être encore en vol : on mesure la pose montée
+        p.copy(it.obj.position); q.copy(it.obj.quaternion);
+        it.obj.position.copy(it.asmPos); it.obj.quaternion.copy(it.asmQuat);
+        it.obj.updateMatrixWorld(true);
+        bb.union(one.setFromObject(it.obj));
+        it.obj.position.copy(p); it.obj.quaternion.copy(q);
+        it.obj.updateMatrixWorld(true);
+      }
+      if (bb.isEmpty()) return bb;
+      const sz = bb.getSize(new THREE.Vector3()), c = bb.getCenter(new THREE.Vector3());
+      const m = 40;                    // une vis seule ne doit pas coller la caméra au nez
+      bb.setFromCenterAndSize(c, sz.max(new THREE.Vector3(m, m, m)));
+      return bb;
+    }
+
+    function showStep(i, instant = false) {
+      step = THREE.MathUtils.clamp(i, 0, STEPS.length - 1);
+      const s = STEPS[step];
+      // visibilité : tout ce qui est déjà monté, rien de ce qui suit
+      PARTS.forEach(p => {
+        const vis = stepOf.get(p.id) <= step;
+        p.objs.forEach(o => o.visible = vis);
+        p.mat.emissive.setHex(stepOf.get(p.id) === step ? 0x40210a : 0x000000);
+      });
+      document.querySelectorAll('#parts-list input').forEach((inp, k) => {
+        const p = PARTS.find(x => x.id === inp.closest('label').querySelector('.nm').dataset.part);
+        inp.checked = stepOf.get(p.id) <= step;
+      });
+      goTo(stepEnd(step));
+      frame(stepBox(step), dirOf(s.az, s.el), s.pad, instant);
+      renderCard();
+    }
+
+    function renderCard() {
+      const s = STEPS[step];
+      document.getElementById('st-num').textContent = `${t('g-step')} ${step + 1} ${t('g-of')} ${STEPS.length}`;
+      document.getElementById('st-title').textContent = s.t[lang];
+      document.getElementById('st-desc').textContent = s.d[lang];
+      document.getElementById('st-tip').textContent = s.tip[lang];
+      document.getElementById('st-tiplabel').textContent = t('g-tip') + ' —';
+      document.getElementById('st-prog').style.width = ((step + 1) / STEPS.length * 100) + '%';
+      const bom = document.getElementById('st-bom');
+      bom.innerHTML = '';
+      s.parts.forEach(id => {
+        const p = PARTS.find(x => x.id === id);
+        const e = document.createElement('span');
+        e.innerHTML = `<i style="background:#${p.color.toString(16).padStart(6, '0')}"></i>`;
+        e.append(`${p.name[lang]} ×${p.at.length}`);
+        bom.appendChild(e);
+      });
+      document.getElementById('st-prev').disabled = step === 0;
+      document.getElementById('st-next').disabled = step === STEPS.length - 1;
+    }
+
+    function setGuide(on, keep = false) {
+      guide = on;
+      document.body.classList.toggle('guide', on);
+      document.getElementById('btn-guide').textContent = t(on ? 'b-quit' : 'b-guide');
+      if (on) { showStep(keep ? step : 0); }
+      else {
+        PARTS.forEach(p => {
+          p.mat.emissive.setHex(0x000000);
+          const vis = !p.optional;
+          p.objs.forEach(o => o.visible = vis);
+        });
+        document.querySelectorAll('#parts-list input').forEach(inp => {
+          const p = PARTS.find(x => x.id === inp.closest('label').querySelector('.nm').dataset.part);
+          inp.checked = !p.optional;
+        });
+        goTo(1);
+      }
+    }
+
+    document.getElementById('btn-guide').onclick = () => setGuide(!guide);
+    document.getElementById('st-prev').onclick = () => showStep(step - 1);
+    document.getElementById('st-next').onclick = () => showStep(step + 1);
+    document.getElementById('st-quit').onclick = () => setGuide(false);
+    addEventListener('keydown', e => {
+      if (!guide || /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+      if (e.key === 'ArrowRight') showStep(step + 1);
+      else if (e.key === 'ArrowLeft') showStep(step - 1);
+      else if (e.key === 'Escape') setGuide(false);
+    });
+
     /* --- commandes ------------------------------------------------------ */
-    document.getElementById('btn-assemble').onclick = () => goTo(1);
-    document.getElementById('btn-disassemble').onclick = () => goTo(0);
-    document.getElementById('asm-slider').oninput = e => setAsm(+e.target.value / 100);
+    document.getElementById('btn-assemble').onclick = () => { if (guide) setGuide(false); goTo(1); };
+    document.getElementById('btn-disassemble').onclick = () => { if (guide) setGuide(false); goTo(0); };
+    document.getElementById('asm-slider').oninput = e => { if (guide) setGuide(false); setAsm(+e.target.value / 100); };
     document.getElementById('explode-slider').oninput = e => {
       explodeAmount = +e.target.value;
       document.getElementById('explode-val').textContent = explodeAmount + '%';

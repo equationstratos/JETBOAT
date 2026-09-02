@@ -14,6 +14,7 @@ dans l’ordre du montage réel ; **Démonter** rejoue l’animation à l’enve
 
 | Commande | Description |
 |------|-------------|
+| **Guide pas-à-pas** | 16 étapes, chacune avec sa fiche, sa nomenclature et son angle de caméra |
 | **Assembler / Démonter** | Animation de montage, pièce par pièce |
 | **Progression** | Curseur pour parcourir le montage image par image |
 | **Éclatement** | Écarte les pièces depuis le bateau monté |
@@ -48,16 +49,28 @@ JETBOAT/
 ├── lancer_visualiseur.bat
 ├── lancer_visualiseur.ps1
 ├── boat_hull.STL              # Coque principale (~15 MB)
+├── tools/
+│   └── case_gen.py            # Génère la boîte par CSG (trimesh + manifold3d)
 └── models/
-    ├── boat_cover.STL
+    ├── boat_cover_turn.STL    # capot utilisé par le visualiseur
+    ├── boat_cover.STL         # même géométrie, maillage 2× plus lourd
     ├── boat_trim_15.STL
     ├── boat_trim_20.STL
     ├── jet_stator.STL
     ├── jet_propeller.STL
     ├── jet_nozzle.STL
     ├── rc_mount.STL
-    └── servo_clevis.STL
+    ├── servo_clevis.STL
+    ├── case_base.STL          # bac de rangement
+    └── case_lid.STL           # couvercle de boîte
 ```
+
+> `boat_cover_turn.STL` était présent dans l’historique du dépôt puis supprimé.
+> Il est **géométriquement identique** à `boat_cover.STL` (volume à 0.02 % près,
+> mêmes coupes, même repère) mais deux fois plus léger : 9 768 triangles et
+> 488 Ko contre 20 938 et 1 047 Ko. C’est lui que charge le visualiseur.
+> L’historique contient aussi `boat_hull_without_batterymount.STL` et
+> `jetboat_ikea_mount.STL`, non restaurés.
 
 ### Repère et positions d’assemblage
 
@@ -139,6 +152,39 @@ Deux réserves, à ne pas prendre pour des cotes relevées :
   dédié pour ces trois éléments. Ils sont posés sur la platine aux bonnes
   dimensions, mais à un emplacement **indicatif**. Tout le reste — accus,
   moteur, servo, transmission, visserie — est calé sur des relevés.
+
+## Boîte de rangement / de vente
+
+Deux pièces imprimées, générées par CSG (`tools/case_gen.py`, trimesh +
+manifold3d), toutes deux étanches au sens maillage :
+
+| | Emprise | Matière | Hauteur |
+|---|---|---|---|
+| `case_base.STL` | 250 × 132 mm | ≈ 323 cm³ | 52 mm |
+| `case_lid.STL`  | 250 × 132 mm | ≈ 230 cm³ | 46 mm |
+
+- **Parois 3.2 mm**, fond 4 mm, angles arrondis R10, nervures verticales
+  extérieures sur les quatre faces, colonnes d’angle renforcées.
+- **Emboîtement** par une jupe de 8 mm sur le couvercle (jeu 0.4 mm), serrage
+  par **4 vis M3×20** dans les angles, lamées côté couvercle.
+- **Gerbable** : 4 patins sous le bac, 4 empreintes en face sur le couvercle.
+- **Prises de main** en biseau auto-portant aux deux bouts.
+- **Cartouche d’étiquette** en creux (150 × 56 mm) sur le dessus — c’est la
+  face de vente du kit.
+- **Intérieur** : un chenal de 94 mm pour le bateau et un compartiment latéral
+  de 25 mm cloisonné en trois pour les accessoires.
+- **Les trois berceaux sont découpés d’après les sections réelles de la
+  coque** : le profil est relevé dans `boat_hull.STL` aux trois stations, puis
+  soustrait de la traverse avec 1.4 mm de jeu.
+
+L’intérieur (240 × 122 × 76 mm) est calé sur l’encombrement réel et non sur la
+coque seule : la tuyère descend à `Z = -130.5` quand l’étrave s’arrête à
+`+100`, soit 230.5 mm hors-tout. Il reste 4.7 mm de jeu à chaque bout.
+
+**Impression** : les deux pièces s’impriment sans support, le bac ouverture
+vers le haut, le couvercle retourné (dessus sur le plateau, pour que le
+cartouche et les lamages sortent nets). L’emprise de 250 × 132 mm passe droit
+sur un plateau 250 × 210 ; sur un 220 × 220, il faut l’orienter en diagonale.
 
 ## Guide de montage (extrait de readme.txt)
 
