@@ -22,6 +22,7 @@ dans l’ordre du montage réel ; **Démonter** rejoue l’animation à l’enve
 | Auto-rotation | Présentation continue |
 | Plan de travail | Grille de la table de montage |
 | Hélice animée | L’impulseur tourne une fois le bateau monté |
+| Panneau rétractable | Chevron en haut à gauche, ou touche <kbd>P</kbd> — replié d’office sous 720 px |
 | Bilingue | FR / EN |
 
 ## Lancer localement

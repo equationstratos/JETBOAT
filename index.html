@@ -8,13 +8,25 @@
   <style>
     :root {
       --bg: #0d1117; --panel: #161b22; --border: #30363d;
-      --text: #e6edf3; --muted: #8b949e; --accent: #ff5500; --accent2: #f78166
+      --text: #e6edf3; --muted: #8b949e; --accent: #ff5500; --accent2: #f78166;
+      --ui-w: 286px
     }
+    @media (max-width: 640px) { :root { --ui-w: 250px } }
     * { box-sizing: border-box; margin: 0; padding: 0 }
     html, body { width: 100%; height: 100%; overflow: hidden; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text) }
     #canvas-wrap { position: absolute; inset: 0 }
     canvas { display: block; width: 100%; height: 100%; touch-action: none }
-    #ui { position: absolute; top: 0; left: 0; bottom: 0; width: 286px; background: rgba(22,27,34,.94); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; overflow-y: auto }
+    /* Le panneau et sa poignée s'escamotent par `transform` seul : la boucle de
+       rendu WebGL sature le thread principal, une transition sur `left` ou
+       `width` s'y ferait étrangler. `will-change` les isole sur leur propre
+       couche de composition, la transition reste donc fluide au montage.     */
+    #ui { position: absolute; top: 0; left: 0; bottom: 0; width: var(--ui-w); background: rgba(22,27,34,.94); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 10; overflow-y: auto; will-change: transform; transition: transform .28s cubic-bezier(.4,0,.2,1) }
+    body.ui-off #ui { transform: translateX(-100%) }
+    #ui-toggle { position: absolute; top: 12px; left: 8px; z-index: 12; width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: .95rem; line-height: 1; will-change: transform; transform: translateX(var(--ui-w)); transition: transform .28s cubic-bezier(.4,0,.2,1) }
+    body.ui-off #ui-toggle { transform: none }
+    #ui-toggle .arr { display: block; transition: transform .28s cubic-bezier(.4,0,.2,1) }
+    body.ui-off #ui-toggle .arr { transform: rotate(180deg) }
+    @media (prefers-reduced-motion: reduce) { #ui, #ui-toggle, #ui-toggle .arr { transition: none } }
     #ui header { padding: 14px 16px 10px; border-bottom: 1px solid var(--border) }
     #ui header h1 { font-size: 1.1rem; font-weight: 700 }
     #ui header p { font-size: .72rem; color: var(--muted); margin-top: 3px }
@@ -50,6 +62,8 @@
     <div class="bar"><div class="fill" id="load-fill"></div></div>
   </div>
   <div id="canvas-wrap"></div>
+
+  <button id="ui-toggle" title="Panneau (P)" aria-controls="ui" aria-expanded="true"><span class="arr">‹</span></button>
 
   <div id="ui">
     <header>
@@ -143,7 +157,8 @@
         'n-explode':'Écarte les pièces depuis le bateau monté.',
         'g-print':'Pièces imprimées','g-drive':'Transmission','g-elec':'Électronique',
         'g-fix':'Visserie & joints',
-        'ph-flat':'Pièces à plat','ph-done':'Bateau monté'
+        'ph-flat':'Pièces à plat','ph-done':'Bateau monté',
+        'ui-hide':'Masquer le panneau (P)','ui-show':'Afficher le panneau (P)'
       },
       en: {
         'h-montage':'Assembly','b-assemble':'Assemble','b-disassemble':'Take apart',
@@ -153,7 +168,8 @@
         'n-explode':'Spreads the parts out from the assembled boat.',
         'g-print':'Printed parts','g-drive':'Drivetrain','g-elec':'Electronics',
         'g-fix':'Fasteners & seals',
-        'ph-flat':'Parts laid out','ph-done':'Boat assembled'
+        'ph-flat':'Parts laid out','ph-done':'Boat assembled',
+        'ui-hide':'Hide panel (P)','ui-show':'Show panel (P)'
       }
     };
     let lang = 'fr';
@@ -593,6 +609,8 @@
       document.querySelectorAll('.grp-title').forEach(e => e.textContent = t(e.dataset.grp));
       document.querySelectorAll('#parts-list .nm').forEach(e =>
         e.textContent = PARTS.find(p => p.id === e.dataset.part).name[lang]);
+      const off = document.body.classList.contains('ui-off');
+      document.getElementById('ui-toggle').title = t(off ? 'ui-show' : 'ui-hide');
       showPhase();
     }
 
@@ -621,6 +639,20 @@
     document.getElementById('chk-spin').onchange = e => spinOn = e.target.checked;
     document.getElementById('btn-fr').onclick = () => setLang('fr');
     document.getElementById('btn-en').onclick = () => setLang('en');
+
+    // panneau latéral escamotable — replié d'office sur les petits écrans
+    const uiToggle = document.getElementById('ui-toggle');
+    function setUI(open) {
+      document.body.classList.toggle('ui-off', !open);
+      uiToggle.setAttribute('aria-expanded', open);
+      uiToggle.title = t(open ? 'ui-hide' : 'ui-show');
+    }
+    uiToggle.onclick = () => setUI(document.body.classList.contains('ui-off'));
+    addEventListener('keydown', e => {
+      if (e.key.toLowerCase() === 'p' && !e.metaKey && !e.ctrlKey && !e.altKey
+          && !/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) uiToggle.onclick();
+    });
+    setUI(innerWidth > 720);
 
     addEventListener('resize', () => {
       camera.aspect = innerWidth / innerHeight;
