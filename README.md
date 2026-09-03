@@ -8,13 +8,13 @@ Visualiseur 3D interactif du **RC Mini Jet Boat** conçu par [jtronics](https://
 
 ## Fonctionnalités
 
-Au chargement, **les 67 pièces sont posées à plat sur le plan de travail**.
+Au chargement, **les 70 pièces sont posées à plat sur le plan de travail**.
 Le bouton **Assembler** les fait converger vers leur position de montage,
 dans l’ordre du montage réel ; **Démonter** rejoue l’animation à l’envers.
 
 | Commande | Description |
 |------|-------------|
-| **Guide pas-à-pas** | 18 étapes, chacune avec sa fiche, sa nomenclature et son angle de caméra |
+| **Guide pas-à-pas** | 19 étapes, chacune avec sa fiche, sa nomenclature et son angle de caméra |
 | **Assembler / Démonter** | Animation de montage, pièce par pièce |
 | **Progression** | Curseur pour parcourir le montage image par image |
 | **Éclatement** | Écarte les pièces depuis le bateau monté |
@@ -50,7 +50,8 @@ JETBOAT/
 ├── lancer_visualiseur.ps1
 ├── boat_hull.STL              # Coque principale (~15 MB)
 ├── tools/
-│   └── case_gen.py            # Génère la boîte par CSG (trimesh + manifold3d)
+│   ├── case_gen.py            # ancienne boîte à jupe (conservée pour mémoire)
+│   └── rugged_box.py          # Génère la boîte Rugged Box par CSG (trimesh + manifold3d)
 └── models/
     ├── boat_cover.STL         # capot plat, utilisé par le visualiseur
     ├── boat_cover_turn.STL    # capot bombé, variante 27 mm
@@ -61,8 +62,12 @@ JETBOAT/
     ├── jet_nozzle.STL
     ├── rc_mount.STL
     ├── servo_clevis.STL
-    ├── case_base.STL          # bac de rangement
-    └── case_lid.STL           # couvercle de boîte
+    ├── Rugged_Box_Parametric_V2.step   # boîte d'origine (fournie), 128.5 × 92.5
+    ├── case_base.STL          # bac de la boîte
+    ├── case_lid.STL           # couvercle de boîte
+    ├── case_tray.STL          # tiroir de rangement amovible
+    ├── case_gasket.STL        # joint plat (TPU)
+    └── case_latch.STL         # loquet, pièce d'origine reprise telle quelle
 ```
 
 > **Deux capots.** `boat_cover.STL` est le capot **plat** (11.2 mm de haut,
@@ -193,39 +198,78 @@ Deux réserves, à ne pas prendre pour des cotes relevées :
   dimensions, mais à un emplacement **indicatif**. Tout le reste — accus,
   moteur, servo, transmission, visserie — est calé sur des relevés.
 
-## Boîte de rangement / de vente
+## Boîte de transport / de vente
 
-Deux pièces imprimées, générées par CSG (`tools/case_gen.py`, trimesh +
-manifold3d), toutes deux étanches au sens maillage :
+La boîte reprend le dessin **« Rugged Box Parametric V2 »** fourni par
+l’utilisateur — `models/Rugged_Box_Parametric_V2.step`, une boîte à charnière
+et à loquets de 128.5 × 92.5 × 35.8 mm. Elle est trop petite pour le bateau ;
+`tools/rugged_box.py` la **reconstruit à la bonne taille en conservant sa
+section et ses interfaces**, mesurées une à une sur le STEP :
+
+| Relevé sur le STEP | Valeur | Repris |
+|---|---|---|
+| Paroi | 2.40 mm | oui |
+| Congés | 7.4 ext. / 5.0 int. | oui |
+| Chanfrein de pied | 2.9 sur 4.0 | oui |
+| Lèchefrite du bord | +1.86, de −4.4 à −2.4 sous le plan de joint | oui |
+| Rainure de joint | 1.8 de large, offsets −1.17 / +0.63 | largeur oui, **profondeur portée à 4.45** |
+| Languette du couvercle | 1.34 de large, 3.4 de haut | oui |
+| Charnière | alésage Ø3.4, axe à +5.5 hors paroi, au plan de joint, noeuds de 6.2 | oui |
+| Loquet | montants de 3.2, passage 23.6, saillie 8.86, alésage Ø3.3 à −7.9 | oui |
+| Gâche | alésage Ø3.3 au plan de joint, +4.74 hors paroi | oui |
+
+La seule cote modifiée est la **profondeur de rainure** : à 2.2 mm, la
+languette de 3.4 du modèle d’origine ne rentrait pas dans sa propre rainure. À
+4.45 il reste 1.05 mm sous la languette quand les deux plans de joint portent
+l’un sur l’autre — le joint plat de 1.4 y est comprimé de 25 %.
+
+Le **loquet est la pièce du fichier d’origine, reprise telle quelle**
+(`case_latch.STL`, 23.2 × 8.8 × 31.1 mm) : ce sont ses deux alésages qui ont
+servi à coter l’interface. Sa cinématique en position fermée n’a pas été
+vérifiée et reste à valider sur un tirage d’essai.
+
+### Les pièces
 
 | | Emprise | Matière | Hauteur |
 |---|---|---|---|
-| `case_base.STL` | 250 × 132 mm | ≈ 323 cm³ | 52 mm |
-| `case_lid.STL`  | 250 × 132 mm | ≈ 207 cm³ | 38 mm |
+| `case_base.STL`   | 246.8 × 156.3 mm | ≈ 256 cm³ | 49.5 mm |
+| `case_lid.STL`    | 246.8 × 155.5 mm | ≈ 160 cm³ | 29.1 mm |
+| `case_tray.STL`   | 237 × 38.6 mm    | ≈ 38 cm³  | 17 mm |
+| `case_gasket.STL` | 243.7 × 139.7 mm | ≈ 1.5 cm³ | 1.4 mm (à tirer en TPU) |
+| `case_latch.STL`  | 23.2 × 8.8 mm    | ≈ 2.8 cm³ | 31.1 mm (×2) |
 
-- **Parois 3.2 mm**, fond 4 mm, angles arrondis R10, nervures verticales
-  extérieures sur les quatre faces, colonnes d’angle renforcées.
-- **Emboîtement** par une jupe de 8 mm sur le couvercle (jeu 0.4 mm), serrage
-  par **4 vis M3×20** dans les angles, lamées côté couvercle.
-- **Gerbable** : 4 patins sous le bac, 4 empreintes en face sur le couvercle.
-- **Prises de main** en biseau auto-portant aux deux bouts.
-- **Cartouche d’étiquette** en creux (150 × 56 mm) sur le dessus — c’est la
-  face de vente du kit.
-- **Intérieur** : un chenal de 94 mm pour le bateau et un compartiment latéral
-  de 25 mm cloisonné en trois pour les accessoires.
-- **Les trois berceaux sont découpés d’après les sections réelles de la
-  coque** : le profil est relevé dans `boat_hull.STL` aux trois stations, puis
-  soustrait de la traverse avec 1.4 mm de jeu.
+Les quatre pièces générées sont **étanches au sens maillage**. Quincaillerie :
+un axe **Ø3 × 214 mm** pour la charnière, deux **Ø3 × 32 mm** pour les loquets.
 
-L’intérieur (240 × 122 × 64 mm) est calé sur l’encombrement réel et non sur la
-coque seule : la tuyère descend à `Z = -130.5` quand l’étrave s’arrête à
-`+100`, soit 230.5 mm hors-tout. Il reste 4.7 mm de jeu à chaque bout, et 3 mm
-au-dessus du capot plat.
+### Intérieur et rangements
 
-**Impression** : les deux pièces s’impriment sans support, le bac ouverture
-vers le haut, le couvercle retourné (dessus sur le plateau, pour que le
-cartouche et les lamages sortent nets). L’emprise de 250 × 132 mm passe droit
-sur un plateau 250 × 210 ; sur un 220 × 220, il faut l’orienter en diagonale.
+- **Chenal du bateau** 92 mm, avec **trois berceaux découpés d’après les
+  sections réelles de la coque** — le profil est relevé dans `boat_hull.STL`
+  aux trois stations puis soustrait de la traverse avec 1.5 mm de jeu.
+- **Quatre cases cloisonnées** le long du flanc (39.6 mm de large, 18 mm de
+  profondeur) pour les accessoires.
+- **Un tiroir amovible** de six cases par-dessus, posé sur le dessus des
+  cloisons à 21 mm du fond, avec deux prises de doigt. Il ne couvre que la
+  bande de rangement : au-dessus du bateau il n’y a pas la hauteur.
+- Nervures extérieures sur les quatre faces, patins et empreintes de gerbage,
+  cartouche d’étiquette en creux (160 × 64 mm) sur le dessus.
+
+Le bateau assemblé mesure **230.5 × 80.8 × 50.5 mm** (tuyère à `Z = -130.5`,
+étrave à `+100`). Une fois posé sur ses berceaux il occupe, dans le repère de
+la boîte, `x = ±115.2`, `y = -63.6 à 17.1`, `z = 10.8 à 61.4`. Marges mesurées :
+
+| | Marge |
+|---|---|
+| Arrière / avant | 3.8 mm |
+| Bâbord / tribord | 5.7 mm |
+| Sous les nervures du couvercle | 0.6 mm |
+
+L’interférence entre le bac et le couvercle fermé a été calculée par booléen :
+**0.0000 cm³**. Hauteur fermée **70.4 mm**.
+
+**Impression** : les deux coques s’impriment sans support, le bac ouverture
+vers le haut, le couvercle retourné (dessus sur le plateau). L’emprise de
+246.8 × 156.3 mm demande un plateau de 250 × 160, ou 250 × 250 en diagonale.
 
 ## Guide de montage (extrait de readme.txt)
 

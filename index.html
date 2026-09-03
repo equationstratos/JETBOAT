@@ -316,6 +316,14 @@
      *  NOMENCLATURE — chaque entrée = une ligne d'inventaire,
      *  `at` liste les positions de montage (repère coque).
      * ------------------------------------------------------------------ */
+    /* Boîte : repère d'impression -> repère coque. Le bac est centré en X et
+       en Y sur son propre repère, Z = 0 au plan de pose.                    */
+    const CASE_AT  = [65.75, -7.21, 84.75];
+    const CASE_ROT = [-R2, 0, -R2];
+    const CASE_ZR    = 43.0;    // plan de joint du bac
+    const CASE_LID_H = 25.0;    // plan de joint du couvercle
+    const caseAt = (x, y, z) => [CASE_AT[0] + y, CASE_AT[1] + z, CASE_AT[2] + x];
+
     const PARTS = [
       /* --- pièces imprimées --------------------------------------------- */
       { id:'hull', grp:'g-print', name:{fr:'Coque',en:'Hull'}, file:'boat_hull.STL',
@@ -484,24 +492,52 @@
         at:[{pos:[22,45.92,113.24], rot:[-SLOPE,0,0]},{pos:[72,45.92,113.24], rot:[-SLOPE,0,0]},
             {pos:[24.5,41.45,24.80], rot:[-SLOPE,0,0]},{pos:[69.5,41.45,24.80], rot:[-SLOPE,0,0]}] },
 
-      /* --- boîte de rangement / de vente ---------------------------------
-         Générée par CSG (voir tools/case_gen.py). Repère de la pièce déjà
-         orienté pour l’impression : X = longueur, Y = largeur, Z = hauteur.
-         L’intérieur est calé sur l’encombrement réel, pas sur la coque : la
-         tuyère descend à Z = -130.5 quand l’étrave s’arrête à +100.
+      /* --- boîte de transport / de vente ----------------------------------
+         Reprise du dessin « Rugged Box Parametric V2 » fourni par
+         l'utilisateur (models/Rugged_Box_Parametric_V2.step, 128.5 x 92.5 x
+         35.8), porté à la taille du bateau assemblé par tools/rugged_box.py :
+         section de paroi, congés, lèchefrite, rainure de joint, charnière et
+         interface de loquet sont repris cote pour cote du fichier d'origine.
+         Le repère des pièces est celui de l'impression : X = longueur,
+         Y = largeur, Z = hauteur, origine au centre et au plan de pose.
+         Passage au repère coque : X = y + 65.75, Y = z - 7.21, Z = x + 84.75,
+         d'où la rotation CASE_ROT et la position CASE_AT communes.
          Décochées au chargement : la vue par défaut reste le bateau.       */
-      { id:'case_base', grp:'g-case', name:{fr:'Bac de rangement',en:'Storage tray'},
+      { id:'case_base', grp:'g-case', name:{fr:'Bac de la boîte',en:'Case base'},
         file:'models/case_base.STL', color:0xc07a2e, lay:'up', optional:true,
-        explode:[0,-72,0], at:[{pos:[-3.2,-14.21,-38.4], rot:[-R2,0,-R2]}] },
+        explode:[0,-90,0], at:[{pos:CASE_AT, rot:CASE_ROT}] },
+
+      { id:'case_tray', grp:'g-case', name:{fr:'Tiroir de rangement',en:'Storage tray'},
+        file:'models/case_tray.STL', color:0x9aa3ad, lay:'up', optional:true,
+        explode:[0,58,0], at:[{pos:caseAt(0, 0, 23.0), rot:CASE_ROT}] },
+
+      { id:'case_gasket', grp:'g-case', name:{fr:'Joint de boîte',en:'Case gasket'},
+        file:'models/case_gasket.STL', color:0x30343a, lay:'up', optional:true,
+        explode:[0,76,0], at:[{pos:caseAt(0, 0, CASE_ZR - 4.45), rot:CASE_ROT}] },
 
       { id:'case_lid', grp:'g-case', name:{fr:'Couvercle de boîte',en:'Case lid'},
         file:'models/case_lid.STL', color:0xb06e26, lay:'flip', optional:true,
-        explode:[0,96,0], at:[{pos:[-3.2,35.79,-38.4], rot:[-R2,0,-R2]}] },
+        explode:[0,118,0],
+        at:[{pos:caseAt(0, 0, CASE_ZR + CASE_LID_H), rot:[R2, 0, -R2]}] },
 
-      { id:'m3x20', grp:'g-case', name:{fr:'Vis M3×20 (boîte)',en:'M3×20 screws (case)'},
-        geo:()=>screwGeo(20,3), color:0xd8dde3, lay:'flat', optional:true,
-        at:[{pos:[7.8,62.59,-27.4]},{pos:[7.8,62.59,201.0]},
-            {pos:[118.2,62.59,-27.4]},{pos:[118.2,62.59,201.0]}] },
+      /* Loquets : la pièce du fichier d'origine, reprise telle quelle et
+         enfilée sur son axe. Les deux alésages Ø3.3 du bac et du couvercle
+         sont cotés d'après elle ; la cinématique en position fermée n'a pas
+         été vérifiée — à valider sur un tirage d'essai.                    */
+      { id:'case_latch', grp:'g-case', name:{fr:'Loquets (pièce d’origine)',en:'Latches (donor part)'},
+        file:'models/case_latch.STL', color:0x2f343b, lay:'up', optional:true,
+        explode:[0,-30,-46],
+        at:[{pos:caseAt(-60, -71.375, 31.1), rot:CASE_ROT},
+            {pos:caseAt( 60, -71.375, 31.1), rot:CASE_ROT}] },
+
+      { id:'case_pin', grp:'g-case', name:{fr:'Axe de charnière Ø3',en:'Ø3 hinge rod'},
+        geo:()=>[cylZ(3, 214)], color:0xb9c0c8, lay:'flat', optional:true,
+        at:[{pos:caseAt(0, 72.9, CASE_ZR)}] },
+
+      { id:'case_axis', grp:'g-case', name:{fr:'Axes de loquet Ø3',en:'Ø3 latch pins'},
+        geo:()=>[cylZ(3, 32)], color:0xb9c0c8, lay:'flat', optional:true,
+        at:[{pos:caseAt(-60, -71.76, CASE_ZR - 7.9)},
+            {pos:caseAt( 60, -71.76, CASE_ZR - 7.9)}] },
     ];
 
     /* ------------------------------------------------------------------ *
@@ -597,8 +633,8 @@
 
       { parts:['battery'], az:140, el:50, pad:1.3,
         t:{fr:'Accus',en:'Cells'},
-        d:{fr:'Les deux 18650 se clipsent par le haut dans leurs gouttières Ø18.6, poussées à fond vers l’arrière. Elles s’arrêtent 2.3 mm avant la butée du tableau, et se posent tête-bêche.',
-           en:'The two 18650 cells clip down into their Ø18.6 troughs and are pushed fully aft. They stop 2.3 mm short of the transom stop, and go in head-to-tail.'},
+        d:{fr:'Les deux 18650 se clipsent par le haut dans leurs gouttières Ø18.6, poussées à fond vers l’arrière. Elles s’arrêtent 1.35 mm avant le resserrement de la gouttière, et se posent tête-bêche.',
+           en:'The two 18650 cells clip down into their Ø18.6 troughs and are pushed fully aft. They stop 1.35 mm short of where the trough closes in, and go in head-to-tail.'},
         tip:{fr:'Tête-bêche, sans quoi le montage série est impossible : le + de l’une doit venir en face du − de l’autre. Et surtout pas jusqu’à la butée — le jeu restant reçoit les barrettes soudées.',
              en:'Head-to-tail, or the series link cannot be made: one cell’s + must face the other’s −. And not hard against the stop — the remaining gap takes the soldered tabs.'} },
 
@@ -623,19 +659,26 @@
         tip:{fr:'Serrer en croix et sans forcer : le joint doit être comprimé régulièrement, pas écrasé sur un seul bord.',
              en:'Tighten crosswise and gently: the cord should be evenly compressed, not crushed on one edge.'} },
 
-      { parts:['case_base'], az:135, el:42, pad:1.1,
-        t:{fr:'Bac de rangement',en:'Storage tray'},
-        d:{fr:'Le bac reçoit le bateau sur trois berceaux découpés d’après les sections réelles de la coque. Le compartiment latéral, cloisonné en trois, prend les accessoires.',
-           en:'The tray takes the boat on three cradles cut from the hull’s real sections. The side compartment, split in three, holds the accessories.'},
-        tip:{fr:'250 × 132 mm d’emprise : sur un plateau 220 × 220, imprimer en diagonale. Parois 3.2 mm, aucun support.',
-             en:'250 × 132 mm footprint: on a 220 × 220 bed, print it diagonally. 3.2 mm walls, no supports.'} },
+      { parts:['case_base','case_pin'], az:135, el:42, pad:1.05,
+        t:{fr:'Bac de la boîte',en:'Case base'},
+        d:{fr:'Le bac reçoit le bateau sur trois berceaux découpés d’après les sections réelles de la coque. Le long du flanc, quatre cases cloisonnées prennent les accessoires. La charnière est enfilée sur un axe Ø3 de 214 mm, à travers les seize créneaux du bac et les dix-sept du couvercle.',
+           en:'The base takes the boat on three cradles cut from the hull’s real sections. Along one side, four divided bays hold the accessories. The hinge is a Ø3 × 214 mm rod through the base’s sixteen knuckles and the lid’s seventeen.'},
+        tip:{fr:'247 × 156 mm d’emprise : il faut un plateau de 250 × 160, ou 250 × 250 en diagonale. S’imprime ouverture en l’air, sans support ; les goussets de loquet et la charnière sont dessinés à 45°.',
+             en:'247 × 156 mm footprint: you need a 250 × 160 bed, or 250 × 250 diagonally. Prints opening up, support-free; latch gussets and hinge are drawn at 45°.'} },
 
-      { parts:['case_lid','m3x20'], az:130, el:38, pad:1.1,
-        t:{fr:'Fermeture',en:'Closing up'},
-        d:{fr:'Le couvercle s’emboîte par sa jupe de 8 mm et se serre par quatre vis M3×20 dans les angles. Patins et empreintes permettent de gerber les boîtes.',
-           en:'The lid engages with its 8 mm skirt and is clamped by four M3×20 screws at the corners. Feet and recesses let the cases stack.'},
-        tip:{fr:'S’imprime retourné, dessus sur le plateau : le cartouche d’étiquette et les lamages sortent nets, sans support.',
-             en:'Print it upside down, top face on the bed: the label panel and counterbores come out clean, support-free.'} }
+      { parts:['case_tray'], az:120, el:56, pad:1.05,
+        t:{fr:'Tiroir de rangement',en:'Storage tray'},
+        d:{fr:'Le tiroir amovible se pose sur le dessus des cloisons, à 21 mm du fond, et double le rangement : six cases pour la visserie, les hélices de rechange et l’outillage. Les quatre cases du dessous restent accessibles en le soulevant par ses deux prises de doigt.',
+           en:'The removable tray drops onto the tops of the dividers, 21 mm above the floor, and doubles the storage: six cells for fasteners, spare impellers and tools. The four bays underneath stay reachable — lift it out by its two finger scoops.'},
+        tip:{fr:'Il ne couvre que la bande de rangement : au-dessus du bateau, il n’y a pas la hauteur.',
+             en:'It only covers the accessory strip: there is no headroom above the boat.'} },
+
+      { parts:['case_gasket','case_lid','case_latch','case_axis'], az:130, el:38, pad:1.05,
+        t:{fr:'Fermeture de la boîte',en:'Closing the case'},
+        d:{fr:'Le joint plat se loge au fond de la rainure, la languette du couvercle vient l’écraser de 25 % quand les deux plans de joint portent l’un sur l’autre. Deux loquets, enfilés sur leurs axes Ø3, tiennent la fermeture ; la charnière fait le reste.',
+           en:'The flat gasket sits at the bottom of the groove; the lid’s tongue squeezes it by 25 % once the two joint faces meet. Two latches on their Ø3 pins hold it shut; the hinge does the rest.'},
+        tip:{fr:'Le couvercle s’imprime retourné, dessus sur le plateau : cartouche d’étiquette et créneaux de charnière sortent nets. Hauteur fermée 70.4 mm, pour 61.5 mm de bateau sur ses berceaux.',
+             en:'Print the lid upside down, top face on the bed: label panel and hinge knuckles come out clean. Closed height 70.4 mm, for 61.5 mm of boat on its cradles.'} }
     ];
 
     /* ------------------------------------------------------------------ */
