@@ -248,20 +248,21 @@
               at(box(19, 1.2, 5), 0, .6, 0), at(box(5, 1.2, 19), 0, .6, 0)];
     }
     /* GOTECK GS-2502 « Nano servo » : 16.0 × 8.0 × 20.0 mm, 2.2 g.
-       Il est couché sur le flanc, comme au montage : la longueur (16) dans la
-       longueur du bateau, la hauteur (20) en travers, l'épaisseur (8) à la
-       verticale. C'est la seule pose qui passe — debout, ses 20 mm de haut ne
-       tiennent pas dans les 12.9 mm que laisse le capot plat au-dessus des
-       plots. Couché, ses pattes d'origine deviennent verticales et ne tombent
-       plus en face des deux vis M2×6 : d'où la bride qui les reprend.
-       Arbre de sortie vers bâbord, la corne balaie le plan vertical
-       longitudinal et pousse la tringle d'avant en arrière.
+       Couché sur le flanc, comme sur la photo de montage : la longueur (16)
+       dans la longueur du bateau, la hauteur (20) en travers, l'épaisseur (8)
+       à la verticale. Debout, ses 20 mm ne tiennent pas dans les 12.9 mm que
+       laisse le capot plat au-dessus des plots.
+       Les languettes d'origine sont coupées — c'est ce qui permet au boîtier
+       de descendre entre les plots — et les deux vis M2×6 ne le vissent pas :
+       elles l'encadrent à 0.75 mm devant et derrière et le calent. Forme
+       d'origine conservée pour le reste : boîtier, moyeu de sortie, corne.
        Origine = dessus des plots.                                          */
     function servoGeo() {
-      return [at(box(20, 8, 16), 0, 5.2, 0),            // corps, couché
-              at(box(9, 1.2, 23), 1.6, .6, 0),          // bride sur les deux plots
-              at(cylX(5, 2.5), -11.2, 5.2, -4),         // moyeu de sortie, vers bâbord
-              at(cylX(8, 1.2), -12.8, 5.2, -4)];        // corne
+      return [at(box(20, 8, 16), 0, 4, 0),              // boîtier posé sur les plots
+              at(box(20, 1.2, 3), 0, 7.4, 6.6),         // capot supérieur du boîtier
+              at(cylX(5, 2.5), -11.2, 4, -4),           // moyeu de sortie, vers bâbord
+              at(cylX(8, 1.2), -12.8, 4, -4),           // corne
+              at(cylZ(1.2, 26), -3, 2.5, -21)];         // faisceau
     }
     function couplerGeo() { return [cyl(6, 12, 20), at(cyl(6.6, 1, 20), 0, 4, 0), at(cyl(6.6, 1, 20), 0, -4, 0)]; }
     const escGeo = () => [box(12, 4.5, 25), at(box(9, 2, 6), 0, 2.6, -14)];
@@ -275,10 +276,11 @@
     const tabGeo = () => [box(9, 8, 0.5), at(cylZ(4, 1.2), 0, 0, .6)];   // barrette + point de soudure
     const cellLinkGeo = () => [
       // liaison série, à l'arrière, dans le jeu laissé devant la butée
-      ...pathGeo([[25.9,22.7,11.3],[27,29,11],[33,35,10],[47,38,9],[61,35,10],[67,29,11],[68.1,22.7,11.3]], .8),
-      // fils de sortie, à l'avant, vers l'ESC
-      ...pathGeo([[25.9,22.7,79.3],[28,27,80],[36,33,80],[43,36,80]], .8),
-      ...pathGeo([[68.1,22.7,79.3],[66,27,80],[58,33,80],[51,36,80]], .8)
+      // liaison série, à l'avant, en passant sous la traverse de la platine
+      ...pathGeo([[25.9,22.7,104.8],[29,25.5,103.5],[38,26.5,102.5],[47,27,102.5],[56,26.5,102.5],[65,25.5,103.5],[68.1,22.7,104.8]], .8),
+      // fils de sortie, à l'arrière, vers l'ESC
+      ...pathGeo([[25.9,22.7,36.8],[28,26,42],[35,31,52],[43,35.5,62]], .8),
+      ...pathGeo([[68.1,22.7,36.8],[66,26,42],[58,31,52],[51,35.5,62]], .8)
     ].flat();
 
     // câble / cordon : polyligne (repère coque) → tube
@@ -314,9 +316,13 @@
       { id:'hull', grp:'g-print', name:{fr:'Coque',en:'Hull'}, file:'boat_hull.STL',
         color:0xf4520c, lay:'up', explode:[0,0,0], at:[{pos:[0,0,0]}] },
 
+      /* Les 4 bossages ne sont pas à la même hauteur : 44.26 à l'avant, 39.80
+         à l'arrière (c'est la pente de 2.90° de la portée). Les inserts se
+         posent à ras de chacun — placés tous à 39.6, ceux de l'avant
+         disparaissaient 4.5 mm sous le bossage.                            */
       { id:'ins_cover', grp:'g-fix', name:{fr:'Inserts M2×3 (couvercle)',en:'M2×3 inserts (cover)'},
         geo:insertGeo, color:0xc9a227, lay:'up',
-        at:[{pos:[22,39.6,113.2]},{pos:[72,39.6,113.2]},{pos:[24.5,39.6,25]},{pos:[69.5,39.6,25]}] },
+        at:[{pos:[22,44.26,113.2]},{pos:[72,44.26,113.2]},{pos:[24.5,39.80,25]},{pos:[69.5,39.80,25]}] },
 
       { id:'ins_elec', grp:'g-fix', name:{fr:'Inserts M2×3 (platine)',en:'M2×3 inserts (tray)'},
         geo:insertGeo, color:0xc9a227, lay:'up',
@@ -384,8 +390,16 @@
         at:[{pos:[34.80,28.65,-16.29], rot:[-R2,0,-R2]}] },
 
       { id:'servorod', grp:'g-elec', name:{fr:'Tringle de servo Ø1',en:'Servo pushrod Ø1'},
-        geo:()=>pathGeo([[34.2,34.6,40.0],[35.8,34.1,25],[37.2,33.4,10],[37.2,33.4,5],[36.9,31.6,1]],.5),
+        geo:()=>pathGeo([[34.2,33.7,40.5],[35.8,33.6,25],[37.2,33.4,10],[37.2,33.4,5],[36.9,31.6,1]],.5),
         color:0xb9bec4, lay:'up', at:[{pos:[0,0,0]}] },
+
+      /* La partlist de jtronics n'en parle pas, mais la coque a bien 2 × 2
+         perçages M2 taraudés en bas du tableau : sans eux les trims ne
+         tiennent pas. Tête logée dans le lamage Ø3.3 du trim.              */
+      { id:'m2x6_trim', grp:'g-fix', name:{fr:'Vis M2×6 (trims)',en:'M2×6 screws (trims)'},
+        geo:()=>screwGeo(6), color:0xd8dde3, lay:'flat',
+        at:[{pos:[20.40,17.51,-2.90], rot:[-R2,0,0]},{pos:[25.98,15.31,-2.90], rot:[-R2,0,0]},
+            {pos:[73.59,17.51,-2.90], rot:[-R2,0,0]},{pos:[68.01,15.31,-2.90], rot:[-R2,0,0]}] },
 
       { id:'trim15', grp:'g-print', name:{fr:'Trim bâbord (15°)',en:'Port trim (15°)'},
         file:'models/boat_trim_15.STL', color:0x1c1c1e, lay:'up', explode:[-42,12,-26],
@@ -413,20 +427,21 @@
       /* Gouttières relevées dans la coque : Ø18.68 — le diamètre exact d’un
          18650 — axes (25.90, 22.72) et (68.10, 22.72), fermées à l’arrière par
          le tableau à Z = 0.72.
-         Les cellules sont poussées le plus en avant possible : elles butent à
-         Z = 79 contre la traverse de la platine, seule pièce qui les arrête
-         (la gouttière, elle, court jusqu'à Z = 106). Leur culot tombe alors à
-         Z = 11.6, juste devant l'épaulement moulé à Z = 10.72 : les 11 mm
-         libres jusqu'au tableau reçoivent les barrettes et la liaison série.
-         Elles sont tête-bêche, comme l'exige un montage 2S — 7.4 V.        */
+         Les cellules passent SOUS la platine : celle-ci s'arque au-dessus des
+         deux bacs, son dessous y remonte à Y = 32.57 quand il est à 29.40 sur
+         l'axe. Le haut des cellules est à 32.02 — 0.55 mm de jeu, elles
+         affleurent la bordure de la plaque.
+         Elles sont donc poussées jusqu'au bout avant de la gouttière, qui
+         s'arrête à Z = 106.1 ; il reste 1.6 mm pour la barrette de liaison.
+         Tête-bêche, comme l'exige un montage 2S — 7.4 V.                   */
       { id:'battery', grp:'g-elec', name:{fr:'Accus 18650 3400 mAh',en:'18650 cells 3400 mAh'},
         geo:batteryGeo, color:0x2f6f4e, lay:'flat',
-        at:[{pos:[25.90,22.72,44.90], rot:[R2,0,0]}, {pos:[68.10,22.72,45.70], rot:[-R2,0,0]}] },
+        at:[{pos:[25.90,22.72,70.40], rot:[R2,0,0]}, {pos:[68.10,22.72,71.20], rot:[-R2,0,0]}] },
 
       { id:'cell_tabs', grp:'g-elec', name:{fr:'Barrettes nickel soudées',en:'Soldered nickel tabs'},
         geo:tabGeo, color:0xc7ccd2, lay:'flat',
-        at:[{pos:[25.90,22.72,11.30]},{pos:[68.10,22.72,11.30]},
-            {pos:[25.90,22.72,79.30], rot:[0,Math.PI,0]},{pos:[68.10,22.72,79.30], rot:[0,Math.PI,0]}] },
+        at:[{pos:[25.90,22.72,36.80], rot:[0,Math.PI,0]},{pos:[68.10,22.72,36.80], rot:[0,Math.PI,0]},
+            {pos:[25.90,22.72,104.80]},{pos:[68.10,22.72,104.80]}] },
 
       { id:'cell_link', grp:'g-elec', name:{fr:'Liaison série 2S + fils de sortie',en:'2S series link + output leads'},
         geo:cellLinkGeo, color:0x2a2d33, lay:'up', at:[{pos:[0,0,0]}] },
@@ -552,7 +567,7 @@
         tip:{fr:'Régler la longueur servo au neutre, tuyère droite. Ajuster ensuite au trim de l’émetteur, pas en forçant la tringle.',
              en:'Set the length with the servo centred and the nozzle straight. Fine-tune on the transmitter trim, not by forcing the rod.'} },
 
-      { parts:['trim15','trim20'], az:225, el:30, pad:1.5,
+      { parts:['trim15','trim20','m2x6_trim'], az:225, el:30, pad:1.5,
         t:{fr:'Trims',en:'Trims'},
         d:{fr:'Les deux trims se vissent en bas du tableau arrière, sur des perçages inclinés à l’angle de carène. Ils débordent de 21 mm vers l’arrière.',
            en:'The two trims screw to the bottom of the transom, on holes canted to the hull deadrise. They overhang 21 mm aft.'},

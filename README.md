@@ -8,7 +8,7 @@ Visualiseur 3D interactif du **RC Mini Jet Boat** conçu par [jtronics](https://
 
 ## Fonctionnalités
 
-Au chargement, **les 63 pièces sont posées à plat sur le plan de travail**.
+Au chargement, **les 67 pièces sont posées à plat sur le plan de travail**.
 Le bouton **Assembler** les fait converger vers leur position de montage,
 dans l’ordre du montage réel ; **Démonter** rejoue l’animation à l’envers.
 
@@ -122,6 +122,8 @@ points de fixation relevés dans la coque :
 | 4 bossages Ø3.25, entraxes 45 / 50 mm, dessus à `Y = 39.80` (arrière) et `44.26` (avant) | inserts + vis du couvercle |
 | 2 bossages Ø3.25 sur l’axe, entraxe 40 mm, dessus à `Y = 29.4` | inserts + vis du support électronique |
 | 2 plots de 8.5 mm de large, centrés sur l’axe, entraxe 19.5 mm, à `Y = 31.57` | tablette + vis du servo |
+| Traverses de la platine, dessous à `Y = 32.57` sur les bacs et `29.40` sur l’axe | passage des accus sous la plaque |
+| 2 × 2 perçages M2 en bas du tableau, entraxe 6 mm | trims (absents de la partlist) |
 | 2 trous Ø2.6 à `X = 39 / 55`, `Z = 106`, entraxe **16 mm** | vis + platine du moteur |
 | 2 gouttières Ø18.68 (!), axes `(25.90, 22.72)` et `(68.10, 22.72)` | logement des accus 18650 |
 | Épaulement moulé dans la gouttière à `Z = 10.72` | butée arrière des accus |
@@ -137,13 +139,16 @@ deux gouttières fait **Ø18.68 mm**, soit le diamètre d’un 18650 ; et la tig
 Ø2×100 couvre exactement la distance accouplement → impulseur.
 
 **Accus et couplage 2S** : les gouttières sont ouvertes vers le haut sur 135°
-(on y clipse la cellule par le dessus). Les cellules sont poussées **le plus en
-avant possible** : elles s’arrêtent à `Z = 79` contre la traverse de la
-platine, seule pièce qui les arrête — la gouttière, elle, court jusqu’à
-`Z = 106`. Leur culot tombe alors à `Z = 11.6`, juste devant l’épaulement moulé
-à `Z = 10.72`, et les 11 mm libres jusqu’au tableau reçoivent les barrettes et
-la liaison série. Elles sont posées **tête-bêche**, comme l’exige un montage 2S
-(7.4 V pour l’ESC et le BEC RECOM).
+(on y clipse la cellule par le dessus). Les cellules passent **sous la platine
+électronique** : celle-ci s’arque au-dessus des deux bacs, son dessous y
+remontant à `Y = 32.57` quand il est à `29.40` sur l’axe. Le haut des cellules
+est à `32.02` — elles affleurent la bordure de la plaque, avec 0.55 mm de jeu.
+
+Elles sont donc poussées **jusqu’au bout avant de la gouttière**, qui s’arrête
+à `Z = 106.1` ; elles occupent `Z = 37.1` à `104.5`, les 1.6 mm restants allant
+à la barrette de liaison. Elles sont posées **tête-bêche**, comme l’exige un
+montage 2S (7.4 V pour l’ESC et le BEC RECOM) : liaison série à l’avant, fils
+de sortie à l’arrière.
 
 Le couplage est modélisé : une barrette soudée sur chacun des quatre pôles, la
 liaison série à l’arrière et les deux fils de sortie à l’avant, vers l’ESC. La
@@ -162,10 +167,11 @@ travers, épaisseur à la verticale. C’est la seule pose possible — debout, 
 20 mm de haut ne tiennent pas dans les **12.9 mm** que le capot plat laisse
 au-dessus des plots.
 
-Couché, ses pattes d’origine deviennent verticales et ne tombent plus en face
-des deux perçages M2 de la tablette : **le support est dessiné pour un servo
-debout**, ce que ce capot interdit. Le modèle porte donc une bride qui reprend
-les deux vis.
+Ses **languettes d’origine sont coupées** : c’est ce qui permet au boîtier de
+descendre entre les plots. Les deux vis M2×6 ne le vissent donc pas — elles
+l’encadrent et le calent. Le calcul tombe juste : les deux vis Ø2 sont à
+`Z = 37.3` et `56.8`, soit 17.5 mm d’écart libre, pour un boîtier de 16 mm.
+0.75 mm de jeu de chaque côté.
 
 Deux réserves, à ne pas prendre pour des cotes relevées :
 
