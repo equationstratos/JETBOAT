@@ -247,18 +247,21 @@
       return [at(cyl(23, 13, 26), 0, 11.5, 0), at(cyl(20, 4, 26), 0, 3, 0),
               at(box(19, 1.2, 5), 0, .6, 0), at(box(5, 1.2, 19), 0, .6, 0)];
     }
-    /* Micro servo 2 g, dressé sur sa tablette.
-       La tablette de la coque est faite de deux plots de 8.5 mm de large
-       exactement, centrés sur l'axe du bateau (X = 47) et espacés de 19.5 mm
-       dans la longueur : le corps se loge entre eux, les pattes portent
-       dessus, l'arbre de sortie est vertical. Le capot plat ne laisse que
-       12.9 mm au-dessus des plots, d'où un servo de faible hauteur.
+    /* GOTECK GS-2502 « Nano servo » : 16.0 × 8.0 × 20.0 mm, 2.2 g.
+       Il est couché sur le flanc, comme au montage : la longueur (16) dans la
+       longueur du bateau, la hauteur (20) en travers, l'épaisseur (8) à la
+       verticale. C'est la seule pose qui passe — debout, ses 20 mm de haut ne
+       tiennent pas dans les 12.9 mm que laisse le capot plat au-dessus des
+       plots. Couché, ses pattes d'origine deviennent verticales et ne tombent
+       plus en face des deux vis M2×6 : d'où la bride qui les reprend.
+       Arbre de sortie vers bâbord, la corne balaie le plan vertical
+       longitudinal et pousse la tringle d'avant en arrière.
        Origine = dessus des plots.                                          */
     function servoGeo() {
-      return [at(box(8.5, 7.0, 12.5), 0, 5.1, 0),        // corps
-              at(box(8.5, 1.6, 23), 0, .8, 0),           // pattes de fixation
-              at(cyl(5, 1.4, 16), 0, 9.3, -4.2),         // moyeu de sortie
-              at(cyl(8, 1.2, 18), 0, 10.6, -4.2)];       // corne
+      return [at(box(20, 8, 16), 0, 5.2, 0),            // corps, couché
+              at(box(9, 1.2, 23), 1.6, .6, 0),          // bride sur les deux plots
+              at(cylX(5, 2.5), -11.2, 5.2, -4),         // moyeu de sortie, vers bâbord
+              at(cylX(8, 1.2), -12.8, 5.2, -4)];        // corne
     }
     function couplerGeo() { return [cyl(6, 12, 20), at(cyl(6.6, 1, 20), 0, 4, 0), at(cyl(6.6, 1, 20), 0, -4, 0)]; }
     const escGeo = () => [box(12, 4.5, 25), at(box(9, 2, 6), 0, 2.6, -14)];
@@ -272,10 +275,10 @@
     const tabGeo = () => [box(9, 8, 0.5), at(cylZ(4, 1.2), 0, 0, .6)];   // barrette + point de soudure
     const cellLinkGeo = () => [
       // liaison série, à l'arrière, dans le jeu laissé devant la butée
-      ...pathGeo([[25.9,22.7,2.8],[26.5,27,6],[32,31.5,12],[47,33,15],[62,31.5,12],[67.5,27,6],[68.1,22.7,2.8]], .8),
+      ...pathGeo([[25.9,22.7,11.3],[27,29,11],[33,35,10],[47,38,9],[61,35,10],[67,29,11],[68.1,22.7,11.3]], .8),
       // fils de sortie, à l'avant, vers l'ESC
-      ...pathGeo([[25.9,22.7,70.8],[28,27,74],[36,33,77],[43,37,78]], .8),
-      ...pathGeo([[68.1,22.7,70.8],[66,27,74],[58,33,77],[51,37,78]], .8)
+      ...pathGeo([[25.9,22.7,79.3],[28,27,80],[36,33,80],[43,36,80]], .8),
+      ...pathGeo([[68.1,22.7,79.3],[66,27,80],[58,33,80],[51,36,80]], .8)
     ].flat();
 
     // câble / cordon : polyligne (repère coque) → tube
@@ -284,9 +287,12 @@
       return [new THREE.TubeGeometry(c, seg ?? Math.max(24, pts.length * 3), r, 10, closed)];
     }
 
-    // contour de la portée du couvercle, relevé sur boat_cover.STL (x , z), à Y = 39.6
-    const SEAL_XZ = [[18.21,35.34],[18.21,39.43],[18.21,43.52],[18.21,47.6],[18.21,51.69],[18.21,55.78],[18.21,59.86],[18.21,63.95],[18.21,68.04],[18.21,72.13],[18.21,76.21],[18.21,80.3],[18.21,84.39],[18.21,88.47],[18.21,92.56],[18.26,96.65],[18.66,100.71],[19.44,104.72],[20.6,108.64],[22.14,112.43],[24.02,116.05],[26.24,119.48],[28.79,122.67],[31.62,125.61],[34.73,128.27],[38.07,130.62],[41.63,132.62],[45.37,134.28],[49.04,134.12],[52.76,132.42],[56.29,130.37],[59.62,128.0],[62.69,125.3],[65.5,122.34],[68.01,119.11],[70.2,115.66],[72.05,112.02],[73.53,108.22],[74.66,104.29],[75.4,100.27],[75.75,96.2],[75.78,92.11],[75.78,88.03],[75.78,83.94],[75.78,79.85],[75.78,75.76],[75.78,71.68],[75.78,67.59],[75.78,63.5],[75.78,59.42],[75.78,55.33],[75.78,51.24],[75.78,47.15],[75.78,43.07],[75.78,38.98],[75.76,34.89],[74.77,30.95],[72.45,27.61],[69.11,25.3],[65.16,24.32],[61.08,24.3],[56.99,24.3],[52.9,24.3],[48.82,24.3],[44.73,24.3],[40.64,24.3],[36.55,24.3],[32.47,24.3],[28.38,24.36],[24.48,25.49],[21.23,27.94],[19.05,31.36]];
-    const sealGeo = () => pathGeo(SEAL_XZ.map(([x, z]) => [x, 39.6, z]), 1, true, 260);
+    /* Contour du cordon de mousse, relevé sur la portée du capot et exprimé
+       dans SON repère : le joint reçoit donc la même pose que le capot et
+       suit son inclinaison. Z = 0.84, soit 0.9 mm sous la portée — le cordon
+       Ø2 écrasé entre le capot et la feuillure. Périmètre 298 mm.          */
+    const SEAL_XY = [[7.41,109.11],[7.41,104.97],[7.41,100.84],[7.41,96.7],[7.41,92.56],[7.41,88.43],[7.41,84.29],[7.41,80.15],[7.41,76.02],[7.41,71.88],[7.41,67.74],[7.41,63.61],[7.41,59.47],[7.41,55.33],[7.41,51.2],[7.48,47.06],[7.91,42.95],[8.72,38.89],[9.93,34.94],[11.51,31.12],[13.45,27.47],[15.75,24.03],[18.35,20.82],[21.25,17.87],[24.44,15.23],[27.85,12.9],[31.48,10.91],[35.28,9.29],[37.49,9.28],[41.29,10.9],[44.92,12.89],[48.33,15.21],[51.51,17.85],[54.42,20.79],[57.03,24.0],[59.32,27.44],[61.26,31.09],[62.85,34.91],[64.07,38.86],[64.88,42.91],[65.31,47.03],[65.38,51.16],[65.38,55.3],[65.38,59.43],[65.38,63.57],[65.38,67.71],[65.38,71.84],[65.38,75.98],[65.38,80.12],[65.38,84.25],[65.38,88.39],[65.38,92.53],[65.38,96.66],[65.38,100.8],[65.38,104.94],[65.38,109.07],[64.61,113.11],[62.39,116.57],[59.03,118.94],[55.03,119.87],[50.89,119.88],[46.76,119.88],[42.62,119.88],[38.48,119.88],[34.35,119.88],[30.21,119.88],[26.07,119.88],[21.94,119.88],[17.8,119.87],[13.79,118.95],[10.42,116.6],[8.19,113.15]];
+    const sealGeo = () => pathGeo(SEAL_XY.map(([x, y]) => [x, y, 0.84]), 1, true, 260);
 
     const wireGeo = () => [
       ...pathGeo([[47,37.5,88],[45,30,98],[46,23,104],[47,21,106]], .7),
@@ -294,6 +300,10 @@
     ].flat();
 
     const R2 = Math.PI / 2;
+    // Inclinaison de la portée du capot : 2.90° nez en l'air (bossages avant
+    // 4.46 mm plus haut que les arrière, sur 88.2 mm d'entraxe).
+    const SLOPE = Math.atan2(44.26 - 39.80, 88.2);      // 0.050525 rad
+    const TILT  = -R2 - SLOPE;
 
     /* ------------------------------------------------------------------ *
      *  NOMENCLATURE — chaque entrée = une ligne d'inventaire,
@@ -374,7 +384,7 @@
         at:[{pos:[34.80,28.65,-16.29], rot:[-R2,0,-R2]}] },
 
       { id:'servorod', grp:'g-elec', name:{fr:'Tringle de servo Ø1',en:'Servo pushrod Ø1'},
-        geo:()=>pathGeo([[43.4,42.2,42.9],[40.6,38.4,30],[37.8,34.5,14],[37.2,33.4,5],[36.9,31.6,1]],.5),
+        geo:()=>pathGeo([[34.2,34.6,40.0],[35.8,34.1,25],[37.2,33.4,10],[37.2,33.4,5],[36.9,31.6,1]],.5),
         color:0xb9bec4, lay:'up', at:[{pos:[0,0,0]}] },
 
       { id:'trim15', grp:'g-print', name:{fr:'Trim bâbord (15°)',en:'Port trim (15°)'},
@@ -403,18 +413,20 @@
       /* Gouttières relevées dans la coque : Ø18.68 — le diamètre exact d’un
          18650 — axes (25.90, 22.72) et (68.10, 22.72), fermées à l’arrière par
          le tableau à Z = 0.72.
-         Les cellules sont poussées à fond vers l’arrière mais s’arrêtent à
-         Z = 3.0, soit 2.28 mm avant la butée : c’est là que passent les
-         barrettes soudées de la liaison série. Elles sont tête-bêche, comme
-         l’exige un montage 2S — 7.4 V pour l’ESC et le BEC.                  */
+         Les cellules sont poussées le plus en avant possible : elles butent à
+         Z = 79 contre la traverse de la platine, seule pièce qui les arrête
+         (la gouttière, elle, court jusqu'à Z = 106). Leur culot tombe alors à
+         Z = 11.6, juste devant l'épaulement moulé à Z = 10.72 : les 11 mm
+         libres jusqu'au tableau reçoivent les barrettes et la liaison série.
+         Elles sont tête-bêche, comme l'exige un montage 2S — 7.4 V.        */
       { id:'battery', grp:'g-elec', name:{fr:'Accus 18650 3400 mAh',en:'18650 cells 3400 mAh'},
         geo:batteryGeo, color:0x2f6f4e, lay:'flat',
-        at:[{pos:[25.90,22.72,36.30], rot:[R2,0,0]}, {pos:[68.10,22.72,37.10], rot:[-R2,0,0]}] },
+        at:[{pos:[25.90,22.72,44.90], rot:[R2,0,0]}, {pos:[68.10,22.72,45.70], rot:[-R2,0,0]}] },
 
       { id:'cell_tabs', grp:'g-elec', name:{fr:'Barrettes nickel soudées',en:'Soldered nickel tabs'},
         geo:tabGeo, color:0xc7ccd2, lay:'flat',
-        at:[{pos:[25.90,22.72,2.80]},{pos:[68.10,22.72,2.80]},
-            {pos:[25.90,22.72,70.60], rot:[0,Math.PI,0]},{pos:[68.10,22.72,70.60], rot:[0,Math.PI,0]}] },
+        at:[{pos:[25.90,22.72,11.30]},{pos:[68.10,22.72,11.30]},
+            {pos:[25.90,22.72,79.30], rot:[0,Math.PI,0]},{pos:[68.10,22.72,79.30], rot:[0,Math.PI,0]}] },
 
       { id:'cell_link', grp:'g-elec', name:{fr:'Liaison série 2S + fils de sortie',en:'2S series link + output leads'},
         geo:cellLinkGeo, color:0x2a2d33, lay:'up', at:[{pos:[0,0,0]}] },
@@ -432,18 +444,23 @@
         geo:wireGeo, color:0x24272c, lay:'up', at:[{pos:[0,0,0]}] },
 
       { id:'seal', grp:'g-fix', name:{fr:'Joint mousse Ø2',en:'Ø2 foam seal'},
-        geo:sealGeo, color:0x30343a, lay:'up', at:[{pos:[0,0,0]}] },
+        geo:sealGeo, color:0x30343a, lay:'flip',
+        at:[{pos:[10.6,44.075,144.11], rot:[TILT,0,0]}] },
 
-      /* Capot plat de jtronics (11.2 mm de haut). Son repère diffère de celui
-         du capot bombé : calage relevé sur ses 4 perçages Ø2.4 (entraxes 45 et
-         50 mm, 88.55 mm entre les paires) et sur sa portée, plane à Z = 1.74. */
+      /* Capot plat de jtronics (11.2 mm de haut), calé sur ses 4 perçages Ø2.4
+         (entraxes 45 et 50 mm) et sur sa portée, plane à Z = 1.74.
+         La portée de la coque n'est PAS horizontale : le dessus des bossages
+         avant est à Y = 44.26, celui des bossages arrière à Y = 39.80, soit
+         4.46 mm sur 88.2 — le capot est incliné de 2.90° nez en l'air. Posé à
+         plat il s'enfonçait de 11 mm dans le pont à l'étrave.               */
       { id:'cover', grp:'g-print', name:{fr:'Couvercle',en:'Cover'},
         file:'models/boat_cover.STL', color:0x2b3550, lay:'flip', explode:[0,52,0],
-        at:[{pos:[10.6,37.86,144.12], rot:[-R2,0,0]}] },
+        at:[{pos:[10.6,44.075,144.11], rot:[TILT,0,0]}] },
 
       { id:'m2x6_cover', grp:'g-fix', name:{fr:'Vis M2×6 (couvercle)',en:'M2×6 screws (cover)'},
         geo:()=>screwGeo(6), color:0xd8dde3, lay:'flat',
-        at:[{pos:[22,41.26,113.2]},{pos:[72,41.26,113.2]},{pos:[24.5,41.26,25]},{pos:[69.5,41.26,25]}] },
+        at:[{pos:[22,45.92,113.24], rot:[-SLOPE,0,0]},{pos:[72,45.92,113.24], rot:[-SLOPE,0,0]},
+            {pos:[24.5,41.45,24.80], rot:[-SLOPE,0,0]},{pos:[69.5,41.45,24.80], rot:[-SLOPE,0,0]}] },
 
       /* --- boîte de rangement / de vente ---------------------------------
          Générée par CSG (voir tools/case_gen.py). Repère de la pièce déjà

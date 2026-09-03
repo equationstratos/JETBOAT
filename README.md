@@ -119,11 +119,12 @@ points de fixation relevés dans la coque :
 
 | Point relevé dans `boat_hull.STL` | Sert à |
 |---|---|
-| 4 bossages Ø3.25, entraxes 45 / 50 mm, dessus à `Y = 39.6` | inserts + vis du couvercle |
+| 4 bossages Ø3.25, entraxes 45 / 50 mm, dessus à `Y = 39.80` (arrière) et `44.26` (avant) | inserts + vis du couvercle |
 | 2 bossages Ø3.25 sur l’axe, entraxe 40 mm, dessus à `Y = 29.4` | inserts + vis du support électronique |
-| 2 plots de **8.5 mm de large**, centrés sur l’axe, entraxe 19.5 mm, à `Y = 31.57` | tablette + vis du servo |
+| 2 plots de 8.5 mm de large, centrés sur l’axe, entraxe 19.5 mm, à `Y = 31.57` | tablette + vis du servo |
 | 2 trous Ø2.6 à `X = 39 / 55`, `Z = 106`, entraxe **16 mm** | vis + platine du moteur |
 | 2 gouttières Ø18.68 (!), axes `(25.90, 22.72)` et `(68.10, 22.72)` | logement des accus 18650 |
+| Épaulement moulé dans la gouttière à `Z = 10.72` | butée arrière des accus |
 | Chambre Ø2.78 de `Z = 58` à `76`, sièges Ø5 aux extrémités | 2 paliers laiton + graisse |
 | Trou Ø1.8 à `(47, 25.57, 74.3)`, débouchant dans cette chambre | vis d’huile M2×8 |
 | Passage Ø2.25 du tableau arrière à `(37.2, 33.4)` | tube laiton + tringle de servo |
@@ -136,28 +137,35 @@ deux gouttières fait **Ø18.68 mm**, soit le diamètre d’un 18650 ; et la tig
 Ø2×100 couvre exactement la distance accouplement → impulseur.
 
 **Accus et couplage 2S** : les gouttières sont ouvertes vers le haut sur 135°
-(on y clipse la cellule par le dessus) et fermées à l’arrière par le tableau, à
-`Z = 0.72`. Les cellules sont poussées à fond vers l’arrière mais s’arrêtent à
-`Z = 3.0`, soit **2.28 mm avant la butée** : ce jeu reçoit les barrettes de
-nickel de la liaison série. Elles sont posées **tête-bêche**, comme l’exige un
-montage 2S (7.4 V pour l’ESC et le BEC RECOM).
+(on y clipse la cellule par le dessus). Les cellules sont poussées **le plus en
+avant possible** : elles s’arrêtent à `Z = 79` contre la traverse de la
+platine, seule pièce qui les arrête — la gouttière, elle, court jusqu’à
+`Z = 106`. Leur culot tombe alors à `Z = 11.6`, juste devant l’épaulement moulé
+à `Z = 10.72`, et les 11 mm libres jusqu’au tableau reçoivent les barrettes et
+la liaison série. Elles sont posées **tête-bêche**, comme l’exige un montage 2S
+(7.4 V pour l’ESC et le BEC RECOM).
 
 Le couplage est modélisé : une barrette soudée sur chacun des quatre pôles, la
 liaison série à l’arrière et les deux fils de sortie à l’avant, vers l’ESC. La
 liaison série n’est pas une barrette droite — **elle passerait en plein dans le
 tunnel du jet** — mais un fil qui l’enjambe, au plus près à 0.7 mm de la paroi.
 
-**Servo** : la tablette est faite de **deux plots de 8.5 mm de large
-exactement** — la largeur d’un servo 2 g —, centrés sur l’axe du bateau
-(`X = 47`) et espacés de 19.5 mm dans la longueur. Le servo se pose donc
-**debout entre les plots**, corps de 8.5 mm de large, pattes portant dessus,
-arbre de sortie vertical : c’est la seule position où il ne déborde pas de son
-support, et la seule qui garde les deux vis verticales.
+**Portée du capot** : elle **n’est pas horizontale**. Le dessus des bossages
+arrière est à `Y = 39.80`, celui des bossages avant à `Y = 44.26` — 4.46 mm sur
+88.2 mm d’entraxe, soit une pente de **2.90° nez en l’air**. Le capot et son
+cordon de mousse reçoivent cette inclinaison ; posés à plat, ils s’enfonçaient
+jusqu’à 11 mm dans le pont vers l’étrave.
 
-Le capot **plat** ne laisse que 12.9 mm au-dessus des plots : le servo modélisé
-est donc de faible hauteur (11.2 mm corne comprise). Un servo 2 g courant fait
-~20 mm de haut et **ne passerait pas** sous ce capot — il faut soit un servo
-extra-plat, soit le capot bombé.
+**Servo** : le GOTECK GS-2502 mesure **16.0 × 8.0 × 20.0 mm** (2.2 g). Il est
+**couché sur le flanc** : longueur dans la longueur du bateau, hauteur en
+travers, épaisseur à la verticale. C’est la seule pose possible — debout, ses
+20 mm de haut ne tiennent pas dans les **12.9 mm** que le capot plat laisse
+au-dessus des plots.
+
+Couché, ses pattes d’origine deviennent verticales et ne tombent plus en face
+des deux perçages M2 de la tablette : **le support est dessiné pour un servo
+debout**, ce que ce capot interdit. Le modèle porte donc une bride qui reprend
+les deux vis.
 
 Deux réserves, à ne pas prendre pour des cotes relevées :
 
