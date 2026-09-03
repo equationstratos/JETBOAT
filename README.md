@@ -144,9 +144,10 @@ deux gouttières fait **Ø18.68 mm**, soit le diamètre d’un 18650 ; et la tig
 remontant à `Y = 32.57` quand il est à `29.40` sur l’axe. Le haut des cellules
 est à `32.02` — elles affleurent la bordure de la plaque, avec 0.55 mm de jeu.
 
-Elles sont donc poussées **jusqu’au bout avant de la gouttière**, qui s’arrête
-à `Z = 106.1` ; elles occupent `Z = 37.1` à `104.5`, les 1.6 mm restants allant
-à la barrette de liaison. Elles sont posées **tête-bêche**, comme l’exige un
+Vers l’avant la gouttière n’a pas de mur : elle se referme peu à peu. Un tir de
+rayons sur le cercle `Ø18.6` place la vraie butée du corps à `Z = 106.05`. Les
+cellules y sont poussées à 1 mm près : corps bâbord jusqu’à `104.70`, tribord
+jusqu’à `105.50`. Elles sont posées **tête-bêche**, comme l’exige un
 montage 2S (7.4 V pour l’ESC et le BEC RECOM) : liaison série à l’avant, fils
 de sortie à l’arrière.
 
@@ -160,6 +161,16 @@ arrière est à `Y = 39.80`, celui des bossages avant à `Y = 44.26` — 4.46 mm
 88.2 mm d’entraxe, soit une pente de **2.90° nez en l’air**. Le capot et son
 cordon de mousse reçoivent cette inclinaison ; posés à plat, ils s’enfonçaient
 jusqu’à 11 mm dans le pont vers l’étrave.
+
+**Cordon de mousse** : son tracé est le contour de la portée du capot rentré de
+**6.0 mm**. À 2.4 mm — le tracé précédent — il passait en plein sur les quatre
+vis M2 du capot (0.3 mm de leurs axes) et son axe était 0.94 mm *dans* la
+matière du rebord. À 6.0 mm il repose exactement sur le fond de feuillure —
+écart mesuré `0.00` à `0.06` mm sur 144 points — et laisse 3.87 mm entre son axe
+et l’axe des vis, soit 0.5 mm entre le cordon et le lamage `Ø4.7`. La feuillure
+n’accepte le cordon qu’entre 5.0 et 6.4 mm de retrait : au-delà il retombe dans
+la matière des bossages. Périmètre **273 mm**, pour un cordon fourni en
+2×200 mm.
 
 **Servo** : le GOTECK GS-2502 mesure **16.0 × 8.0 × 20.0 mm** (2.2 g). Il est
 **couché sur le flanc** : longueur dans la longueur du bateau, hauteur en

@@ -277,7 +277,7 @@
     const cellLinkGeo = () => [
       // liaison série, à l'arrière, dans le jeu laissé devant la butée
       // liaison série, à l'avant, en passant sous la traverse de la platine
-      ...pathGeo([[25.9,22.7,104.8],[29,25.5,103.5],[38,26.5,102.5],[47,27,102.5],[56,26.5,102.5],[65,25.5,103.5],[68.1,22.7,104.8]], .8),
+      ...pathGeo([[25.9,22.7,105.8],[29,25.5,104.5],[38,26.5,103.5],[47,27,103.5],[56,26.5,103.5],[65,25.5,104.5],[68.1,22.7,105.8]], .8),
       // fils de sortie, à l'arrière, vers l'ESC
       ...pathGeo([[25.9,22.7,36.8],[28,26,42],[35,31,52],[43,35.5,62]], .8),
       ...pathGeo([[68.1,22.7,36.8],[66,26,42],[58,31,52],[51,35.5,62]], .8)
@@ -289,11 +289,16 @@
       return [new THREE.TubeGeometry(c, seg ?? Math.max(24, pts.length * 3), r, 10, closed)];
     }
 
-    /* Contour du cordon de mousse, relevé sur la portée du capot et exprimé
-       dans SON repère : le joint reçoit donc la même pose que le capot et
-       suit son inclinaison. Z = 0.84, soit 0.9 mm sous la portée — le cordon
-       Ø2 écrasé entre le capot et la feuillure. Périmètre 298 mm.          */
-    const SEAL_XY = [[7.41,109.11],[7.41,104.97],[7.41,100.84],[7.41,96.7],[7.41,92.56],[7.41,88.43],[7.41,84.29],[7.41,80.15],[7.41,76.02],[7.41,71.88],[7.41,67.74],[7.41,63.61],[7.41,59.47],[7.41,55.33],[7.41,51.2],[7.48,47.06],[7.91,42.95],[8.72,38.89],[9.93,34.94],[11.51,31.12],[13.45,27.47],[15.75,24.03],[18.35,20.82],[21.25,17.87],[24.44,15.23],[27.85,12.9],[31.48,10.91],[35.28,9.29],[37.49,9.28],[41.29,10.9],[44.92,12.89],[48.33,15.21],[51.51,17.85],[54.42,20.79],[57.03,24.0],[59.32,27.44],[61.26,31.09],[62.85,34.91],[64.07,38.86],[64.88,42.91],[65.31,47.03],[65.38,51.16],[65.38,55.3],[65.38,59.43],[65.38,63.57],[65.38,67.71],[65.38,71.84],[65.38,75.98],[65.38,80.12],[65.38,84.25],[65.38,88.39],[65.38,92.53],[65.38,96.66],[65.38,100.8],[65.38,104.94],[65.38,109.07],[64.61,113.11],[62.39,116.57],[59.03,118.94],[55.03,119.87],[50.89,119.88],[46.76,119.88],[42.62,119.88],[38.48,119.88],[34.35,119.88],[30.21,119.88],[26.07,119.88],[21.94,119.88],[17.8,119.87],[13.79,118.95],[10.42,116.6],[8.19,113.15]];
+    /* Contour du cordon de mousse, exprimé dans le repère du capot : le joint
+       reçoit donc la même pose que lui et suit son inclinaison. Z = 0.84,
+       soit 0.9 mm sous la portée — le cordon Ø2 écrasé dans la feuillure.
+       Tracé rentré de 6.0 mm sous le nu de la portée : à 2.4 mm il passait
+       en plein sur les 4 vis M2 du capot (0.3 mm des axes) et son axe était
+       0.94 mm dans la matière du rebord. À 6.0 mm il repose exactement sur
+       le fond de feuillure (écart mesuré 0.00 à 0.06 mm sur 144 points) et
+       laisse 3.87 mm entre son axe et l'axe des vis, soit 0.5 mm entre le
+       cordon et le lamage Ø4.7. Périmètre 273 mm.                          */
+    const SEAL_XY = [[36.39,12.71],[32.91,14.22],[29.59,16.06],[26.47,18.21],[23.56,20.65],[20.91,23.36],[18.53,26.32],[16.45,29.49],[14.68,32.85],[13.25,36.36],[12.16,40.0],[11.43,43.72],[11.06,47.5],[11.01,51.29],[11.01,55.09],[11.01,58.88],[11.01,62.68],[11.01,66.47],[11.01,70.27],[11.01,74.07],[11.01,77.86],[11.01,81.66],[11.01,85.45],[11.01,89.25],[11.01,93.05],[11.01,96.84],[11.01,100.64],[11.01,104.43],[11.01,108.23],[11.59,111.95],[13.92,114.89],[17.42,116.24],[21.21,116.28],[25.01,116.28],[28.81,116.28],[32.6,116.28],[36.4,116.28],[40.19,116.28],[43.99,116.28],[47.79,116.28],[51.58,116.28],[55.38,116.24],[58.87,114.88],[61.2,111.94],[61.78,108.23],[61.78,104.43],[61.78,100.63],[61.78,96.84],[61.78,93.04],[61.78,89.25],[61.78,85.45],[61.78,81.65],[61.78,77.86],[61.78,74.06],[61.78,70.27],[61.78,66.47],[61.78,62.67],[61.78,58.88],[61.78,55.08],[61.78,51.29],[61.73,47.49],[61.36,43.72],[60.63,39.99],[59.54,36.36],[58.11,32.84],[56.35,29.48],[54.26,26.31],[51.88,23.36],[49.23,20.64],[46.32,18.21],[43.19,16.06],[39.88,14.21]];
     const sealGeo = () => pathGeo(SEAL_XY.map(([x, y]) => [x, y, 0.84]), 1, true, 260);
 
     const wireGeo = () => [
@@ -431,17 +436,19 @@
          deux bacs, son dessous y remonte à Y = 32.57 quand il est à 29.40 sur
          l'axe. Le haut des cellules est à 32.02 — 0.55 mm de jeu, elles
          affleurent la bordure de la plaque.
-         Elles sont donc poussées jusqu'au bout avant de la gouttière, qui
-         s'arrête à Z = 106.1 ; il reste 1.6 mm pour la barrette de liaison.
+         Vers l'avant la gouttière n'a pas de mur : elle se referme peu à peu.
+         Un tir de rayons sur le cercle Ø18.6 donne la vraie butée du corps à
+         Z = 106.05. Les cellules y sont avancées à 1 mm près : corps bâbord
+         jusqu'à 104.70, tribord jusqu'à 105.50.
          Tête-bêche, comme l'exige un montage 2S — 7.4 V.                   */
       { id:'battery', grp:'g-elec', name:{fr:'Accus 18650 3400 mAh',en:'18650 cells 3400 mAh'},
         geo:batteryGeo, color:0x2f6f4e, lay:'flat',
-        at:[{pos:[25.90,22.72,70.40], rot:[R2,0,0]}, {pos:[68.10,22.72,71.20], rot:[-R2,0,0]}] },
+        at:[{pos:[25.90,22.72,71.40], rot:[R2,0,0]}, {pos:[68.10,22.72,72.20], rot:[-R2,0,0]}] },
 
       { id:'cell_tabs', grp:'g-elec', name:{fr:'Barrettes nickel soudées',en:'Soldered nickel tabs'},
         geo:tabGeo, color:0xc7ccd2, lay:'flat',
         at:[{pos:[25.90,22.72,36.80], rot:[0,Math.PI,0]},{pos:[68.10,22.72,36.80], rot:[0,Math.PI,0]},
-            {pos:[25.90,22.72,104.80]},{pos:[68.10,22.72,104.80]}] },
+            {pos:[25.90,22.72,105.80]},{pos:[68.10,22.72,105.80]}] },
 
       { id:'cell_link', grp:'g-elec', name:{fr:'Liaison série 2S + fils de sortie',en:'2S series link + output leads'},
         geo:cellLinkGeo, color:0x2a2d33, lay:'up', at:[{pos:[0,0,0]}] },
@@ -611,8 +618,8 @@
 
       { parts:['seal','cover','m2x6_cover'], az:160, el:50, pad:1.2,
         t:{fr:'Étanchéité et capot',en:'Seal and canopy'},
-        d:{fr:'Poser le cordon mousse Ø2 sur la portée (≈ 294 mm de contour), puis le capot, serré par quatre vis M2×6 dans les inserts.',
-           en:'Lay the Ø2 foam cord on the sealing face (about 294 mm around), then the canopy, held by four M2×6 screws into the inserts.'},
+        d:{fr:'Poser le cordon mousse Ø2 au fond de la feuillure (≈ 273 mm de contour), bien en retrait des quatre vis, puis le capot, serré par quatre vis M2×6 dans les inserts.',
+           en:'Lay the Ø2 foam cord in the rebate (about 273 mm around), well inboard of the four screws, then the canopy, held by four M2×6 screws into the inserts.'},
         tip:{fr:'Serrer en croix et sans forcer : le joint doit être comprimé régulièrement, pas écrasé sur un seul bord.',
              en:'Tighten crosswise and gently: the cord should be evenly compressed, not crushed on one edge.'} },
 
