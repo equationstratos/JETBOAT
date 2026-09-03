@@ -266,6 +266,18 @@
     // antenne couchée : dressée, elle traversait le capot plat
     const rxGeo  = () => [box(13, 4, 22), at(cylZ(1, 26), 5, 0, -24)];
 
+    /* Couplage 2S des accus. Une barrette droite d'un accu à l'autre passerait
+       en plein dans le tunnel du jet : la liaison série est donc une barrette
+       soudée sur chaque pôle, reliée par un fil qui enjambe le tunnel.       */
+    const tabGeo = () => [box(9, 8, 0.5), at(cylZ(4, 1.2), 0, 0, .6)];   // barrette + point de soudure
+    const cellLinkGeo = () => [
+      // liaison série, à l'arrière, dans le jeu laissé devant la butée
+      ...pathGeo([[25.9,22.7,2.8],[26.5,27,6],[32,31.5,12],[47,33,15],[62,31.5,12],[67.5,27,6],[68.1,22.7,2.8]], .8),
+      // fils de sortie, à l'avant, vers l'ESC
+      ...pathGeo([[25.9,22.7,70.8],[28,27,74],[36,33,77],[43,37,78]], .8),
+      ...pathGeo([[68.1,22.7,70.8],[66,27,74],[58,33,77],[51,37,78]], .8)
+    ].flat();
+
     // câble / cordon : polyligne (repère coque) → tube
     function pathGeo(pts, r, closed = false, seg = null) {
       const c = new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(...p)), closed, 'catmullrom', .3);
@@ -277,8 +289,6 @@
     const sealGeo = () => pathGeo(SEAL_XZ.map(([x, z]) => [x, 39.6, z]), 1, true, 260);
 
     const wireGeo = () => [
-      ...pathGeo([[25.9,31,32],[32,33,48],[42,36,62],[45,37.5,68]], .7),
-      ...pathGeo([[68.1,31,32],[60,33,48],[50,36,62],[49,37.5,68]], .7),
       ...pathGeo([[47,37.5,88],[45,30,98],[46,23,104],[47,21,106]], .7),
       ...pathGeo([[33,34,58],[38,35,54],[44,36,50],[46,36.5,45]], .7)
     ].flat();
@@ -392,10 +402,22 @@
 
       /* Gouttières relevées dans la coque : Ø18.68 — le diamètre exact d’un
          18650 — axes (25.90, 22.72) et (68.10, 22.72), fermées à l’arrière par
-         le tableau à Z = 0.72, sur lequel l’accu vient en butée.             */
+         le tableau à Z = 0.72.
+         Les cellules sont poussées à fond vers l’arrière mais s’arrêtent à
+         Z = 3.0, soit 2.28 mm avant la butée : c’est là que passent les
+         barrettes soudées de la liaison série. Elles sont tête-bêche, comme
+         l’exige un montage 2S — 7.4 V pour l’ESC et le BEC.                  */
       { id:'battery', grp:'g-elec', name:{fr:'Accus 18650 3400 mAh',en:'18650 cells 3400 mAh'},
         geo:batteryGeo, color:0x2f6f4e, lay:'flat',
-        at:[{pos:[25.90,22.72,34.60], rot:[R2,0,0]}, {pos:[68.10,22.72,34.60], rot:[R2,0,0]}] },
+        at:[{pos:[25.90,22.72,36.30], rot:[R2,0,0]}, {pos:[68.10,22.72,37.10], rot:[-R2,0,0]}] },
+
+      { id:'cell_tabs', grp:'g-elec', name:{fr:'Barrettes nickel soudées',en:'Soldered nickel tabs'},
+        geo:tabGeo, color:0xc7ccd2, lay:'flat',
+        at:[{pos:[25.90,22.72,2.80]},{pos:[68.10,22.72,2.80]},
+            {pos:[25.90,22.72,70.60], rot:[0,Math.PI,0]},{pos:[68.10,22.72,70.60], rot:[0,Math.PI,0]}] },
+
+      { id:'cell_link', grp:'g-elec', name:{fr:'Liaison série 2S + fils de sortie',en:'2S series link + output leads'},
+        geo:cellLinkGeo, color:0x2a2d33, lay:'up', at:[{pos:[0,0,0]}] },
 
       { id:'esc', grp:'g-elec', name:{fr:'ESC 20 A',en:'20 A ESC'},
         geo:escGeo, color:0x1f1f24, lay:'up', at:[{pos:[47,37.8,75.5]}] },
@@ -534,12 +556,26 @@
         tip:{fr:'La lumière centrale sert au passage des câbles : router avant de visser, on n’y revient pas facilement.',
              en:'The central slot is for cable routing: run them before screwing down, it is awkward to revisit.'} },
 
-      { parts:['battery','esc','bec','rx','wires'], az:140, el:52, pad:1.25,
-        t:{fr:'Accus et électronique',en:'Cells and electronics'},
-        d:{fr:'Les deux 18650 se clipsent dans leurs gouttières Ø18.6, en butée sur le tableau. ESC, BEC et récepteur prennent place sur la platine.',
-           en:'The two 18650 cells clip into their Ø18.6 troughs, butted against the transom. ESC, BEC and receiver sit on the tray.'},
-        tip:{fr:'Les gouttières sont ouvertes sur 135° : la cellule entre par le haut. Position des accus mesurée ; celle de l’ESC, du BEC et du récepteur reste indicative.',
-             en:'The troughs open over 135°: the cell drops in from above. Cell positions are measured; ESC, BEC and receiver placement is indicative.'} },
+      { parts:['battery'], az:140, el:50, pad:1.3,
+        t:{fr:'Accus',en:'Cells'},
+        d:{fr:'Les deux 18650 se clipsent par le haut dans leurs gouttières Ø18.6, poussées à fond vers l’arrière. Elles s’arrêtent 2.3 mm avant la butée du tableau, et se posent tête-bêche.',
+           en:'The two 18650 cells clip down into their Ø18.6 troughs and are pushed fully aft. They stop 2.3 mm short of the transom stop, and go in head-to-tail.'},
+        tip:{fr:'Tête-bêche, sans quoi le montage série est impossible : le + de l’une doit venir en face du − de l’autre. Et surtout pas jusqu’à la butée — le jeu restant reçoit les barrettes soudées.',
+             en:'Head-to-tail, or the series link cannot be made: one cell’s + must face the other’s −. And not hard against the stop — the remaining gap takes the soldered tabs.'} },
+
+      { parts:['cell_tabs','cell_link'], az:206, el:34, pad:1.45,
+        t:{fr:'Couplage soudé des accus',en:'Soldered cell coupling'},
+        d:{fr:'Une barrette de nickel sur chaque pôle. À l’arrière, les deux barrettes sont reliées par un fil qui enjambe le tunnel du jet : c’est la liaison série, 2S, 7.4 V. À l’avant, les deux fils de sortie partent vers l’ESC.',
+           en:'A nickel tab on each terminal. At the back, the two tabs are joined by a wire arching over the jet tunnel — that is the 2S series link, 7.4 V. At the front, the two output leads run to the ESC.'},
+        tip:{fr:'Ne jamais chauffer longtemps une cellule : soudeuse par points de préférence, sinon fer bien chaud, flux, moins de deux secondes par pôle. Une barrette droite d’un accu à l’autre passerait en plein dans le tunnel du jet — d’où le fil qui l’enjambe.',
+             en:'Never dwell on a cell with heat: spot welder if you have one, otherwise a hot iron, flux, under two seconds per terminal. A straight strip from cell to cell would run right through the jet tunnel — hence the wire arching over it.'} },
+
+      { parts:['esc','bec','rx','wires'], az:140, el:54, pad:1.25,
+        t:{fr:'Électronique',en:'Electronics'},
+        d:{fr:'ESC, BEC et récepteur prennent place sur la platine et dans la bande centrale, seule zone où le capot plat laisse de la hauteur. Le récepteur se pose sur l’accu bâbord, antenne couchée.',
+           en:'ESC, BEC and receiver sit on the tray in the central band, the only area where the flat cover leaves any height. The receiver rests on the port cell, antenna laid flat.'},
+        tip:{fr:'Position des accus et du servo relevée sur la coque ; celle de l’ESC, du BEC et du récepteur reste indicative. Le BEC est couché : debout, il traverserait le capot.',
+             en:'Cell and servo positions are measured on the hull; ESC, BEC and receiver placement is indicative. The BEC lies flat — upright it would go through the cover.'} },
 
       { parts:['seal','cover','m2x6_cover'], az:160, el:50, pad:1.2,
         t:{fr:'Étanchéité et capot',en:'Seal and canopy'},

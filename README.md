@@ -8,13 +8,13 @@ Visualiseur 3D interactif du **RC Mini Jet Boat** conçu par [jtronics](https://
 
 ## Fonctionnalités
 
-Au chargement, **les 54 pièces sont posées à plat sur le plan de travail**.
+Au chargement, **les 63 pièces sont posées à plat sur le plan de travail**.
 Le bouton **Assembler** les fait converger vers leur position de montage,
 dans l’ordre du montage réel ; **Démonter** rejoue l’animation à l’envers.
 
 | Commande | Description |
 |------|-------------|
-| **Guide pas-à-pas** | 16 étapes, chacune avec sa fiche, sa nomenclature et son angle de caméra |
+| **Guide pas-à-pas** | 18 étapes, chacune avec sa fiche, sa nomenclature et son angle de caméra |
 | **Assembler / Démonter** | Animation de montage, pièce par pièce |
 | **Progression** | Curseur pour parcourir le montage image par image |
 | **Éclatement** | Écarte les pièces depuis le bateau monté |
@@ -135,9 +135,17 @@ Trois recoupements valident le calage : l’entraxe moteur relevé fait
 deux gouttières fait **Ø18.68 mm**, soit le diamètre d’un 18650 ; et la tige
 Ø2×100 couvre exactement la distance accouplement → impulseur.
 
-**Accus** : les gouttières sont ouvertes vers le haut sur 135° (on y clipse la
-cellule par le dessus) et fermées à l’arrière par le tableau, à `Z = 0.72` :
-l’accu vient en butée sur ce fond, et occupe donc `Z = 2` à `67`.
+**Accus et couplage 2S** : les gouttières sont ouvertes vers le haut sur 135°
+(on y clipse la cellule par le dessus) et fermées à l’arrière par le tableau, à
+`Z = 0.72`. Les cellules sont poussées à fond vers l’arrière mais s’arrêtent à
+`Z = 3.0`, soit **2.28 mm avant la butée** : ce jeu reçoit les barrettes de
+nickel de la liaison série. Elles sont posées **tête-bêche**, comme l’exige un
+montage 2S (7.4 V pour l’ESC et le BEC RECOM).
+
+Le couplage est modélisé : une barrette soudée sur chacun des quatre pôles, la
+liaison série à l’arrière et les deux fils de sortie à l’avant, vers l’ESC. La
+liaison série n’est pas une barrette droite — **elle passerait en plein dans le
+tunnel du jet** — mais un fil qui l’enjambe, au plus près à 0.7 mm de la paroi.
 
 **Servo** : la tablette est faite de **deux plots de 8.5 mm de large
 exactement** — la largeur d’un servo 2 g —, centrés sur l’axe du bateau
