@@ -224,6 +224,7 @@
      * ------------------------------------------------------------------ */
     const cyl = (d, h, seg = 20) => new THREE.CylinderGeometry(d / 2, d / 2, h, seg);
     const cylX = (d, h, seg = 16) => cyl(d, h, seg).rotateZ(Math.PI / 2);
+    const cylZ = (d, h, seg = 16) => cyl(d, h, seg).rotateX(Math.PI / 2);
     const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
     const at = (g, x, y, z) => { g.translate(x, y, z); return g; };
 
@@ -246,24 +247,24 @@
       return [at(cyl(23, 13, 26), 0, 11.5, 0), at(cyl(20, 4, 26), 0, 3, 0),
               at(box(19, 1.2, 5), 0, .6, 0), at(box(5, 1.2, 19), 0, .6, 0)];
     }
-    /* Micro servo 2 g, couché sur le flanc (cf. photo de montage jtronics) :
-       axe long selon Z (avant-arrière), pattes débordant à l'avant et à
-       l'arrière — leurs 2 perçages sont bien distants de 19.5 mm en Z sur la
-       tablette —, épaisseur 8.6 mm à la verticale, et arbre de sortie
-       horizontal pointant vers bâbord : la corne balaie donc le plan vertical
-       longitudinal et pousse la tringle d'avant en arrière.
-       Origine = dessous des pattes, sur la tablette.                        */
+    /* Micro servo 2 g, dressé sur sa tablette.
+       La tablette de la coque est faite de deux plots de 8.5 mm de large
+       exactement, centrés sur l'axe du bateau (X = 47) et espacés de 19.5 mm
+       dans la longueur : le corps se loge entre eux, les pattes portent
+       dessus, l'arbre de sortie est vertical. Le capot plat ne laisse que
+       12.9 mm au-dessus des plots, d'où un servo de faible hauteur.
+       Origine = dessus des plots.                                          */
     function servoGeo() {
-      return [at(box(16, 8.6, 15.5), -1, 5.9, 0),         // corps
-              at(box(11, 1.6, 23), 0, .8, 0),             // pattes de fixation
-              at(cylX(5, 3), -10.5, 5.9, -4.5),           // moyeu de sortie
-              at(cylX(8, 1.2), -12.6, 5.9, -4.5),         // corne
-              at(box(1.8, 6, 1.8), -12.6, 3.2, -4.5)];    // bras de corne
+      return [at(box(8.5, 7.0, 12.5), 0, 5.1, 0),        // corps
+              at(box(8.5, 1.6, 23), 0, .8, 0),           // pattes de fixation
+              at(cyl(5, 1.4, 16), 0, 9.3, -4.2),         // moyeu de sortie
+              at(cyl(8, 1.2, 18), 0, 10.6, -4.2)];       // corne
     }
     function couplerGeo() { return [cyl(6, 12, 20), at(cyl(6.6, 1, 20), 0, 4, 0), at(cyl(6.6, 1, 20), 0, -4, 0)]; }
     const escGeo = () => [box(12, 4.5, 25), at(box(9, 2, 6), 0, 2.6, -14)];
-    const becGeo = () => [at(box(11.5, 17.5, 8.5), 0, 8.75, 0)];
-    const rxGeo  = () => [box(13, 4, 22), at(cyl(1, 22, 8), 5, 3, 4)];
+    const becGeo = () => [at(box(11.5, 8.5, 17.5), 0, 4.25, 0)];   // couché : le capot plat ne laisse pas 17.5 mm
+    // antenne couchée : dressée, elle traversait le capot plat
+    const rxGeo  = () => [box(13, 4, 22), at(cylZ(1, 26), 5, 0, -24)];
 
     // câble / cordon : polyligne (repère coque) → tube
     function pathGeo(pts, r, closed = false, seg = null) {
@@ -276,10 +277,10 @@
     const sealGeo = () => pathGeo(SEAL_XZ.map(([x, z]) => [x, 39.6, z]), 1, true, 260);
 
     const wireGeo = () => [
-      ...pathGeo([[25.9,31,32],[30,33,50],[35,36,66],[37,37.5,76]], .7),
-      ...pathGeo([[68.1,31,32],[60,33,50],[45,36,66],[38,37.5,76]], .7),
-      ...pathGeo([[37,37.5,88],[41,30,98],[45,23,104],[47,21,106]], .7),
-      ...pathGeo([[57,37,70],[54,39,58],[50,42,50],[48.6,44,44]], .7)
+      ...pathGeo([[25.9,31,32],[32,33,48],[42,36,62],[45,37.5,68]], .7),
+      ...pathGeo([[68.1,31,32],[60,33,48],[50,36,62],[49,37.5,68]], .7),
+      ...pathGeo([[47,37.5,88],[45,30,98],[46,23,104],[47,21,106]], .7),
+      ...pathGeo([[33,34,58],[38,35,54],[44,36,50],[46,36.5,45]], .7)
     ].flat();
 
     const R2 = Math.PI / 2;
@@ -363,11 +364,8 @@
         at:[{pos:[34.80,28.65,-16.29], rot:[-R2,0,-R2]}] },
 
       { id:'servorod', grp:'g-elec', name:{fr:'Tringle de servo Ø1',en:'Servo pushrod Ø1'},
-        geo:()=>pathGeo([[36.0,34.3,42.3],[36.6,33.9,26],[37.2,33.4,10],[37.2,33.4,4],[36.9,31.6,1]],.5),
+        geo:()=>pathGeo([[43.4,42.2,42.9],[40.6,38.4,30],[37.8,34.5,14],[37.2,33.4,5],[36.9,31.6,1]],.5),
         color:0xb9bec4, lay:'up', at:[{pos:[0,0,0]}] },
-
-      { id:'grub_horn', grp:'g-fix', name:{fr:'Vis sans tête M2×3 (corne)',en:'M2×3 grub screws (horn)'},
-        geo:grubGeo, color:0x6f7681, lay:'flat', at:[{pos:[36.0,36.2,42.5]},{pos:[36.0,36.2,39.5]}] },
 
       { id:'trim15', grp:'g-print', name:{fr:'Trim bâbord (15°)',en:'Port trim (15°)'},
         file:'models/boat_trim_15.STL', color:0x1c1c1e, lay:'up', explode:[-42,12,-26],
@@ -378,7 +376,7 @@
         at:[{pos:[79.827,16.959,0.054], rot:[Math.PI,0,2.766277]}] },
 
       { id:'servo', grp:'g-elec', name:{fr:'Servo 2 g',en:'2 g servo'},
-        geo:servoGeo, color:0x2b2f36, lay:'up', at:[{pos:[48.6,31.57,47.05]}] },
+        geo:servoGeo, color:0x2b2f36, lay:'up', at:[{pos:[47,31.57,47.05]}] },
 
       { id:'m2x6_servo', grp:'g-fix', name:{fr:'Vis M2×6 (servo)',en:'M2×6 screws (servo)'},
         geo:()=>screwGeo(6), color:0xd8dde3, lay:'flat',
@@ -400,13 +398,13 @@
         at:[{pos:[25.90,22.72,34.60], rot:[R2,0,0]}, {pos:[68.10,22.72,34.60], rot:[R2,0,0]}] },
 
       { id:'esc', grp:'g-elec', name:{fr:'ESC 20 A',en:'20 A ESC'},
-        geo:escGeo, color:0x1f1f24, lay:'up', at:[{pos:[37,37.8,80]}] },
+        geo:escGeo, color:0x1f1f24, lay:'up', at:[{pos:[47,37.8,75.5]}] },
 
       { id:'bec', grp:'g-elec', name:{fr:'BEC Recom R-78',en:'Recom R-78 BEC'},
-        geo:becGeo, color:0x14161a, lay:'up', at:[{pos:[30,35.6,92]}] },
+        geo:becGeo, color:0x14161a, lay:'up', at:[{pos:[47,35.6,96.5]}] },
 
       { id:'rx', grp:'g-elec', name:{fr:'Récepteur 2.4 GHz',en:'2.4 GHz receiver'},
-        geo:rxGeo, color:0x1a1d22, lay:'up', at:[{pos:[57,37.6,72]}] },
+        geo:rxGeo, color:0x1a1d22, lay:'up', at:[{pos:[30,32.5,60]}] },
 
       { id:'wires', grp:'g-elec', name:{fr:'Câblage',en:'Wiring'},
         geo:wireGeo, color:0x24272c, lay:'up', at:[{pos:[0,0,0]}] },
@@ -414,13 +412,16 @@
       { id:'seal', grp:'g-fix', name:{fr:'Joint mousse Ø2',en:'Ø2 foam seal'},
         geo:sealGeo, color:0x30343a, lay:'up', at:[{pos:[0,0,0]}] },
 
+      /* Capot plat de jtronics (11.2 mm de haut). Son repère diffère de celui
+         du capot bombé : calage relevé sur ses 4 perçages Ø2.4 (entraxes 45 et
+         50 mm, 88.55 mm entre les paires) et sur sa portée, plane à Z = 1.74. */
       { id:'cover', grp:'g-print', name:{fr:'Couvercle',en:'Cover'},
-        file:'models/boat_cover_turn.STL', color:0x2b3550, lay:'flip', explode:[0,62,0],
-        at:[{pos:[12.16,38.70,144.03], rot:[-R2,0,0]}] },
+        file:'models/boat_cover.STL', color:0x2b3550, lay:'flip', explode:[0,52,0],
+        at:[{pos:[10.6,37.86,144.12], rot:[-R2,0,0]}] },
 
       { id:'m2x6_cover', grp:'g-fix', name:{fr:'Vis M2×6 (couvercle)',en:'M2×6 screws (cover)'},
         geo:()=>screwGeo(6), color:0xd8dde3, lay:'flat',
-        at:[{pos:[22,41.2,113.2]},{pos:[72,41.2,113.2]},{pos:[24.5,41.2,25]},{pos:[69.5,41.2,25]}] },
+        at:[{pos:[22,41.26,113.2]},{pos:[72,41.26,113.2]},{pos:[24.5,41.26,25]},{pos:[69.5,41.26,25]}] },
 
       /* --- boîte de rangement / de vente ---------------------------------
          Générée par CSG (voir tools/case_gen.py). Repère de la pièce déjà
@@ -438,8 +439,8 @@
 
       { id:'m3x20', grp:'g-case', name:{fr:'Vis M3×20 (boîte)',en:'M3×20 screws (case)'},
         geo:()=>screwGeo(20,3), color:0xd8dde3, lay:'flat', optional:true,
-        at:[{pos:[7.8,70.59,-27.4]},{pos:[7.8,70.59,201.0]},
-            {pos:[118.2,70.59,-27.4]},{pos:[118.2,70.59,201.0]}] },
+        at:[{pos:[7.8,62.59,-27.4]},{pos:[7.8,62.59,201.0]},
+            {pos:[118.2,62.59,-27.4]},{pos:[118.2,62.59,201.0]}] },
     ];
 
     /* ------------------------------------------------------------------ *
@@ -505,7 +506,7 @@
         tip:{fr:'La rotule doit être libre mais sans jeu : trop serré, la direction traîne ; trop lâche, elle vibre.',
              en:'The ball must move freely but without slop: too tight and steering drags, too loose and it flutters.'} },
 
-      { parts:['clevis','servorod','grub_horn'], az:198, el:34, pad:1.6,
+      { parts:['clevis','servorod'], az:198, el:34, pad:1.6,
         t:{fr:'Direction',en:'Steering linkage'},
         d:{fr:'La tringle Ø1 sort du tube laiton du tableau, la chape la relie au bras de la tuyère. Deux vis sans tête la bloquent sur la corne de servo.',
            en:'The Ø1 pushrod exits the transom brass tube and the clevis links it to the nozzle arm. Two grub screws lock it to the servo horn.'},

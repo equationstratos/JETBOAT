@@ -52,8 +52,8 @@ JETBOAT/
 ├── tools/
 │   └── case_gen.py            # Génère la boîte par CSG (trimesh + manifold3d)
 └── models/
-    ├── boat_cover_turn.STL    # capot utilisé par le visualiseur
-    ├── boat_cover.STL         # même géométrie, maillage 2× plus lourd
+    ├── boat_cover.STL         # capot plat, utilisé par le visualiseur
+    ├── boat_cover_turn.STL    # capot bombé, variante 27 mm
     ├── boat_trim_15.STL
     ├── boat_trim_20.STL
     ├── jet_stator.STL
@@ -65,11 +65,14 @@ JETBOAT/
     └── case_lid.STL           # couvercle de boîte
 ```
 
-> `boat_cover_turn.STL` était présent dans l’historique du dépôt puis supprimé.
-> Il est **géométriquement identique** à `boat_cover.STL` (volume à 0.02 % près,
-> mêmes coupes, même repère) mais deux fois plus léger : 9 768 triangles et
-> 488 Ko contre 20 938 et 1 047 Ko. C’est lui que charge le visualiseur.
-> L’historique contient aussi `boat_hull_without_batterymount.STL` et
+> **Deux capots.** `boat_cover.STL` est le capot **plat** (11.2 mm de haut,
+> 15.6 cm³) : c’est celui que charge le visualiseur. `boat_cover_turn.STL` est
+> la variante **bombée** (27.2 mm, 25.0 cm³). Les deux n’ont pas le même
+> repère : le calage du visualiseur est relevé sur les perçages du capot plat.
+> Le choix n’est pas cosmétique — le capot plat ne laisse que **12.9 à 14.9 mm**
+> au-dessus de la tablette du servo, contre 27 pour le bombé, ce qui contraint
+> la hauteur du servo et impose de coucher le BEC.
+> L’historique du dépôt contient aussi `boat_hull_without_batterymount.STL` et
 > `jetboat_ikea_mount.STL`, non restaurés.
 
 ### Repère et positions d’assemblage
@@ -118,7 +121,7 @@ points de fixation relevés dans la coque :
 |---|---|
 | 4 bossages Ø3.25, entraxes 45 / 50 mm, dessus à `Y = 39.6` | inserts + vis du couvercle |
 | 2 bossages Ø3.25 sur l’axe, entraxe 40 mm, dessus à `Y = 29.4` | inserts + vis du support électronique |
-| 2 trous Ø1.8 à `X = 48.6`, entraxe 19.5 mm, tablette à `Y = 31.57` | vis + pattes du servo |
+| 2 plots de **8.5 mm de large**, centrés sur l’axe, entraxe 19.5 mm, à `Y = 31.57` | tablette + vis du servo |
 | 2 trous Ø2.6 à `X = 39 / 55`, `Z = 106`, entraxe **16 mm** | vis + platine du moteur |
 | 2 gouttières Ø18.68 (!), axes `(25.90, 22.72)` et `(68.10, 22.72)` | logement des accus 18650 |
 | Chambre Ø2.78 de `Z = 58` à `76`, sièges Ø5 aux extrémités | 2 paliers laiton + graisse |
@@ -136,13 +139,17 @@ deux gouttières fait **Ø18.68 mm**, soit le diamètre d’un 18650 ; et la tig
 cellule par le dessus) et fermées à l’arrière par le tableau, à `Z = 0.72` :
 l’accu vient en butée sur ce fond, et occupe donc `Z = 2` à `67`.
 
-**Servo** : il est **couché sur le flanc**, axe long selon la longueur du
-bateau. C’est ce que montre la photo de montage de jtronics, et c’est la seule
-orientation compatible avec les deux perçages relevés — ils sont distants de
-19.5 mm *selon la longueur*, donc les pattes débordent à l’avant et à
-l’arrière. L’arbre de sortie est de ce fait horizontal et pointe vers bâbord :
-la corne balaie le plan vertical longitudinal et pousse la tringle d’avant en
-arrière, jusqu’au passage Ø2.25 du tableau.
+**Servo** : la tablette est faite de **deux plots de 8.5 mm de large
+exactement** — la largeur d’un servo 2 g —, centrés sur l’axe du bateau
+(`X = 47`) et espacés de 19.5 mm dans la longueur. Le servo se pose donc
+**debout entre les plots**, corps de 8.5 mm de large, pattes portant dessus,
+arbre de sortie vertical : c’est la seule position où il ne déborde pas de son
+support, et la seule qui garde les deux vis verticales.
+
+Le capot **plat** ne laisse que 12.9 mm au-dessus des plots : le servo modélisé
+est donc de faible hauteur (11.2 mm corne comprise). Un servo 2 g courant fait
+~20 mm de haut et **ne passerait pas** sous ce capot — il faut soit un servo
+extra-plat, soit le capot bombé.
 
 Deux réserves, à ne pas prendre pour des cotes relevées :
 
@@ -161,7 +168,7 @@ manifold3d), toutes deux étanches au sens maillage :
 | | Emprise | Matière | Hauteur |
 |---|---|---|---|
 | `case_base.STL` | 250 × 132 mm | ≈ 323 cm³ | 52 mm |
-| `case_lid.STL`  | 250 × 132 mm | ≈ 230 cm³ | 46 mm |
+| `case_lid.STL`  | 250 × 132 mm | ≈ 207 cm³ | 38 mm |
 
 - **Parois 3.2 mm**, fond 4 mm, angles arrondis R10, nervures verticales
   extérieures sur les quatre faces, colonnes d’angle renforcées.
@@ -177,9 +184,10 @@ manifold3d), toutes deux étanches au sens maillage :
   coque** : le profil est relevé dans `boat_hull.STL` aux trois stations, puis
   soustrait de la traverse avec 1.4 mm de jeu.
 
-L’intérieur (240 × 122 × 76 mm) est calé sur l’encombrement réel et non sur la
+L’intérieur (240 × 122 × 64 mm) est calé sur l’encombrement réel et non sur la
 coque seule : la tuyère descend à `Z = -130.5` quand l’étrave s’arrête à
-`+100`, soit 230.5 mm hors-tout. Il reste 4.7 mm de jeu à chaque bout.
+`+100`, soit 230.5 mm hors-tout. Il reste 4.7 mm de jeu à chaque bout, et 3 mm
+au-dessus du capot plat.
 
 **Impression** : les deux pièces s’impriment sans support, le bac ouverture
 vers le haut, le couvercle retourné (dessus sur le plateau, pour que le
