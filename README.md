@@ -18,6 +18,7 @@ dans l’ordre du montage réel ; **Démonter** rejoue l’animation à l’enve
 | **Mode pilotage** | Le bateau à l’eau, houle, déjaugeage, gerbe de jet — manette PS4 ou clavier |
 | **Trois caméras** | Poursuite, embarquée sur le pont, orbite libre à la souris |
 | **Recherche & sélection** | Filtre sur les 70 pièces, et clic dans la 3D pour identifier une pièce |
+| **Livrées** | Coque anthracite et flashs de couleur — bleu, rouge, jaune, vert, blanc |
 | **Assembler / Démonter** | Animation de montage, pièce par pièce |
 | **Progression** | Curseur pour parcourir le montage image par image |
 | **Éclatement** | Écarte les pièces depuis le bateau monté |
@@ -315,6 +316,33 @@ est un jet de particules : deux moustaches d’étrave et le remous du jet.
 Rien n’est ajouté au chargement : eau, ciel et particules ne sont construits
 qu’à l’entrée dans le mode, et libérés à la sortie. La boîte de transport, si
 elle est affichée, reste au sec.
+
+## Livrées
+
+Cinq peintures — **bleu, rouge, jaune, vert, blanc** — sur coque anthracite,
+plus **Atelier**, qui remet les teintes vives servant à distinguer les pièces
+pendant le montage. Le choix est retenu d’un passage à l’autre
+(`localStorage`), et vaut aussi en mode pilotage. Aucun logo, aucune marque :
+la peinture seule.
+
+Les flashs ne sont **pas une texture** — le STL de jtronics n’a pas de
+coordonnées UV et en plaquer proprement demanderait de le redécouper. C’est un
+masque calculé dans le repère de la coque et injecté dans le shader Lambert par
+`onBeforeCompile` : il colle donc à la carène quoi qu’il arrive, sans toucher
+au maillage.
+
+Le tracé est une coordonnée balayée `s = y + 0.135 × (200 − z)`, haute à
+l’étrave et basse au tableau. Deux lignes `s = cte` — un flash large et un
+liseré — filent le long des hauts et convergent vers l’avant, plus une pointe
+d’étrave. La pente compte : à 0.22, mon premier essai, les traits plongeaient
+sous le bouchain dès le milieu et disparaissaient ; 0.135 est la valeur qui les
+garde dans les hauts sur toute la longueur. La peinture est bornée aux flancs
+(`|x − 47| > 12…18`) et au-dessus du bouchain (`y > 11…17`), sinon elle
+débordait sous la carène.
+
+J’ai d’abord essayé de faire suivre la **ligne de livet** relevée sur le
+maillage : l’ajustement cubique laisse ±2.5 mm d’erreur, et une bande de 5 mm
+posée dessus ondulait visiblement. Le tracé géométrique, lui, est net.
 
 ## Panneau des pièces
 

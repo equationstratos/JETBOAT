@@ -51,6 +51,9 @@
     body.guide #phase { display: none }
 
     header h1 .ver { font-size: .62rem; font-weight: 700; letter-spacing: .06em; color: #0d1117; background: var(--accent); border-radius: 4px; padding: 2px 5px; vertical-align: middle; margin-left: 4px }
+    #livery-row { display: flex; gap: 7px; margin-bottom: 7px }
+    .sw-btn { width: 30px; height: 26px; padding: 0; border-radius: 6px; border: 2px solid transparent; cursor: pointer; flex: none }
+    .sw-btn.on { border-color: #f2f5f8; box-shadow: 0 0 0 1px #0d1117 inset }
     #parts-search { width: 100%; margin-bottom: 7px; padding: 5px 8px; font: inherit; font-size: .74rem; color: var(--fg); background: #12171d; border: 1px solid var(--border); border-radius: 6px }
     #parts-search:focus { outline: none; border-color: var(--accent) }
     .chk.sel { background: rgba(255,85,0,.14); border-radius: 5px }
@@ -150,6 +153,12 @@
     </div>
 
     <div class="section">
+      <h2 data-i18n="h-livery">Livrée</h2>
+      <div id="livery-row"></div>
+      <div class="note" data-i18n="n-livery">Coque anthracite et flashs de couleur. « Atelier » remet les teintes qui distinguent les pièces au montage.</div>
+    </div>
+
+    <div class="section">
       <h2 data-i18n="h-display">Affichage</h2>
       <label class="chk"><input type="checkbox" id="chk-wire"/> <span data-i18n="c-wire">Filaire</span></label>
       <label class="chk"><input type="checkbox" id="chk-auto"/> <span data-i18n="c-auto">Auto-rotation</span></label>
@@ -239,7 +248,8 @@
         'g-print':'Pièces imprimées','g-drive':'Transmission','g-elec':'Électronique',
         'g-fix':'Visserie & joints','g-case':'Boîte de rangement',
         'h-guide':'Guide de montage','b-guide':'Guide pas-à-pas','b-quit':'Quitter le guide',
-        'b-play':'Mode pilotage','ph-search':'Rechercher une pièce…','sel-none':'Aucune pièce ici','hud-thr':'Gaz','hud-str':'Barre','hud-quit':'Quitter',
+        'b-play':'Mode pilotage','h-livery':'Livrée',
+        'n-livery':'Coque anthracite et flashs de couleur. « Atelier » remet les teintes qui distinguent les pièces au montage.','ph-search':'Rechercher une pièce…','sel-none':'Aucune pièce ici','hud-thr':'Gaz','hud-str':'Barre','hud-quit':'Quitter',
         'hud-pad':'stick gauche = barre · R2 = gaz · L2 = arrière · stick droit = caméra · ✕ = poursuite',
         'hud-key':'↑/↓ = gaz · ←/→ = barre · C = caméra · R = remise à l’eau · Échap = quitter — manette branchée mais muette ? Cliquez dans la page puis pressez une touche du pad : le navigateur ne la révèle qu’au premier appui.',
         'hud-wake':'Manette reconnue — appuyez sur une touche du pad pour l’activer.',
@@ -259,7 +269,8 @@
         'g-print':'Printed parts','g-drive':'Drivetrain','g-elec':'Electronics',
         'g-fix':'Fasteners & seals','g-case':'Storage case',
         'h-guide':'Build guide','b-guide':'Step-by-step','b-quit':'Leave guide',
-        'b-play':'Drive it','ph-search':'Search a part…','sel-none':'No part here','hud-thr':'Throttle','hud-str':'Steering','hud-quit':'Exit',
+        'b-play':'Drive it','h-livery':'Livery',
+        'n-livery':'Anthracite hull with colour flashes. “Workshop” restores the tints that tell the parts apart during assembly.','ph-search':'Search a part…','sel-none':'No part here','hud-thr':'Throttle','hud-str':'Steering','hud-quit':'Exit',
         'hud-pad':'left stick steers · R2 throttle · L2 reverse · right stick camera · ✕ back to chase',
         'hud-key':'↑/↓ throttle · ←/→ steering · C camera · R reset · Esc to exit — gamepad plugged in but silent? Click in the page, then press a button on the pad: the browser only reveals it on the first press.',
         'hud-wake':'Gamepad recognised — press a button on the pad to activate it.',
@@ -377,6 +388,24 @@
      *  NOMENCLATURE — chaque entrée = une ligne d'inventaire,
      *  `at` liste les positions de montage (repère coque).
      * ------------------------------------------------------------------ */
+    /* ------------------------------------------------------------------ *
+     *  LIVRÉES
+     *  Coque anthracite et flashs de couleur. Les flashs ne sont pas une
+     *  texture — le STL de jtronics n'a pas de coordonnées UV — mais un
+     *  masque calculé dans le repère de la coque et injecté dans le shader
+     *  par onBeforeCompile. Ils suivent donc la carène quoi qu'il arrive.
+     *  Aucun logo : la peinture seule.
+     * ------------------------------------------------------------------ */
+    const LIVERIES = [
+      { id:'atelier', name:{fr:'Atelier',en:'Workshop'}, sw:'#ff5500', accent:null },
+      { id:'bleu',    name:{fr:'Bleu',   en:'Blue'},     sw:'#1e9be0', accent:0x1e9be0 },
+      { id:'rouge',   name:{fr:'Rouge',  en:'Red'},      sw:'#e8342a', accent:0xe8342a },
+      { id:'jaune',   name:{fr:'Jaune',  en:'Yellow'},   sw:'#f2c300', accent:0xf2c300 },
+      { id:'vert',    name:{fr:'Vert',   en:'Green'},    sw:'#4cc93a', accent:0x4cc93a },
+      { id:'blanc',   name:{fr:'Blanc',  en:'White'},    sw:'#e8ecef', accent:0xe8ecef },
+    ];
+    const LIV_HULL = 0x23262b, LIV_DECK = 0x1b2026, LIV_DARK = 0x121417;
+
     /* Boîte : repère d'impression -> repère coque. Le bac est centré en X et
        en Y sur son propre repère, Z = 0 au plan de pose.                    */
     const CASE_AT  = [65.75, -7.21, 84.75];
@@ -743,6 +772,45 @@
     ];
 
     /* ------------------------------------------------------------------ */
+    /* Masque des flashs, en coordonnées de coque (x 0..94, y 0..52, z 0..200,
+       étrave en +Z). `s` est une coordonnée balayée : à pente constante, une
+       ligne s = cte dessine un flash incliné qui file vers l'étrave. Deux
+       flashs parallèles à l'arrière, un liseré au ras du livet, et la pointe
+       d'étrave reprise en couleur.                                          */
+    const LIVERY_MASK = `
+      float livMask(vec3 q) {
+        // on ne peint que les flancs, au-dessus du bouchain
+        float side  = smoothstep(12.0, 18.0, abs(q.x - 47.0));
+        float above = smoothstep(11.0, 17.0, q.y);
+        /* s : haut à l'étrave, bas au tableau. La pente 0.135 est celle qui
+           garde les deux traits dans les hauts sur TOUTE la longueur — à 0.22
+           ils plongeaient sous le bouchain dès le milieu et disparaissaient. */
+        float s = q.y + 0.135 * (200.0 - q.z);
+        float f1  = 1.0 - smoothstep(3.8, 5.2, abs(s - 45.0));   // flash large
+        float f2  = 1.0 - smoothstep(1.5, 2.3, abs(s - 36.5));   // liseré bas
+        float bow = smoothstep(188.0, 198.0, q.z);               // pointe d'étrave
+        return clamp(max(f1, f2) * side * above + bow, 0.0, 1.0);
+      }`;
+
+    function makeLiveryMat(color) {
+      const m = new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide });
+      m.userData.acc = { value: new THREE.Color(0x000000) };
+      m.userData.on  = { value: 0 };
+      m.onBeforeCompile = sh => {
+        sh.uniforms.uAcc = m.userData.acc;
+        sh.uniforms.uOn  = m.userData.on;
+        sh.vertexShader = sh.vertexShader
+          .replace('#include <common>', '#include <common>\nvarying vec3 vLoc;')
+          .replace('#include <begin_vertex>', '#include <begin_vertex>\nvLoc = position;');
+        sh.fragmentShader = sh.fragmentShader
+          .replace('#include <common>',
+            '#include <common>\nvarying vec3 vLoc;\nuniform vec3 uAcc;\nuniform float uOn;\n' + LIVERY_MASK)
+          .replace('#include <color_fragment>',
+            '#include <color_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, uAcc, livMask(vLoc) * uOn);');
+      };
+      return m;
+    }
+
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0d1117);
     const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.5, 4000);
@@ -793,7 +861,10 @@
     async function loadAll() {
       for (const part of PARTS) {
         const geos = await buildGeos(part);
-        part.mat = new THREE.MeshLambertMaterial({ color: part.color, side: THREE.DoubleSide });
+        part.mat = part.id === 'hull'
+          ? makeLiveryMat(part.color)
+          : new THREE.MeshLambertMaterial({ color: part.color, side: THREE.DoubleSide });
+        part.color0 = part.color;              // teinte d'atelier, pour y revenir
         part.objs = [];
         part.at.forEach(inst => {
           const o = new THREE.Group();
@@ -813,6 +884,7 @@
       layout();
       timeline();
       buildList();
+      buildLiveryRow();
       apply();
       fitCamera(true);
       document.getElementById('loading').classList.add('hidden');
@@ -968,6 +1040,52 @@
 
     /* --- inventaire ----------------------------------------------------- */
     const GROUPS = ['g-print', 'g-drive', 'g-elec', 'g-fix', 'g-case'];
+    /* Application d'une livrée. « Atelier » remet les teintes d'origine, celles
+       qui servent à distinguer les pièces au montage ; les cinq autres passent
+       tout en anthracite et ne laissent la couleur qu'aux flashs de coque, au
+       pont et aux trims — la boîte de rangement, elle, garde sa teinte.      */
+    let livery = 'atelier';
+    const ACCENT_PARTS = ['trim15', 'trim20'];
+    const DARK_PARTS   = ['nozzle', 'stator', 'prop', 'clevis', 'rcmount'];
+
+    function setLivery(id) {
+      const L = LIVERIES.find(l => l.id === id) || LIVERIES[0];
+      livery = L.id;
+      const hull = PARTS.find(p => p.id === 'hull');
+      for (const part of PARTS) {
+        if (part.grp === 'g-case') continue;
+        if (!L.accent) { part.mat.color.setHex(part.color0); continue; }
+        if (part.id === 'hull')                  part.mat.color.setHex(LIV_HULL);
+        else if (part.id === 'cover')            part.mat.color.setHex(LIV_DECK);
+        else if (ACCENT_PARTS.includes(part.id)) part.mat.color.setHex(L.accent);
+        else if (DARK_PARTS.includes(part.id))   part.mat.color.setHex(LIV_DARK);
+        else                                     part.mat.color.setHex(part.color0);
+      }
+      if (hull) {
+        hull.mat.userData.on.value = L.accent ? 1 : 0;
+        if (L.accent) hull.mat.userData.acc.value.setHex(L.accent);
+      }
+      document.querySelectorAll('#livery-row button').forEach(b =>
+        b.classList.toggle('on', b.dataset.liv === L.id));
+      try { localStorage.setItem('jetboat-livery', L.id); } catch (_) {}
+    }
+
+    function buildLiveryRow() {
+      const row = document.getElementById('livery-row');
+      row.innerHTML = '';
+      for (const L of LIVERIES) {
+        const b = document.createElement('button');
+        b.className = 'sw-btn'; b.dataset.liv = L.id;
+        b.title = L.name[lang];
+        b.style.background = L.sw;
+        b.onclick = () => setLivery(L.id);
+        row.appendChild(b);
+      }
+      let saved = 'atelier';
+      try { saved = localStorage.getItem('jetboat-livery') || 'atelier'; } catch (_) {}
+      setLivery(saved);
+    }
+
     function buildList() {
       const list = document.getElementById('parts-list');
       list.innerHTML = '';
@@ -1026,6 +1144,8 @@
       document.querySelectorAll('[data-i18n]').forEach(e => e.textContent = t(e.dataset.i18n));
       document.querySelectorAll('[data-i18n-ph]').forEach(e => e.placeholder = t(e.dataset.i18nPh));
       document.querySelectorAll('.grp-title').forEach(e => e.textContent = t(e.dataset.grp));
+      document.querySelectorAll('#livery-row button').forEach(b =>
+        b.title = (LIVERIES.find(l => l.id === b.dataset.liv) || LIVERIES[0]).name[lang]);
       document.querySelectorAll('#parts-list .nm').forEach(e =>
         e.textContent = PARTS.find(p => p.id === e.dataset.part).name[lang]);
       if (typeof filterList === 'function') filterList();
