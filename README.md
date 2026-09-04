@@ -15,7 +15,9 @@ dans l’ordre du montage réel ; **Démonter** rejoue l’animation à l’enve
 | Commande | Description |
 |------|-------------|
 | **Guide pas-à-pas** | 19 étapes, chacune avec sa fiche, sa nomenclature et son angle de caméra |
-| **Mode pilotage** | Le bateau à l’eau, houle, sillage — manette PS4 ou clavier |
+| **Mode pilotage** | Le bateau à l’eau, houle, déjaugeage, gerbe de jet — manette PS4 ou clavier |
+| **Trois caméras** | Poursuite, embarquée sur le pont, orbite libre à la souris |
+| **Recherche & sélection** | Filtre sur les 70 pièces, et clic dans la 3D pour identifier une pièce |
 | **Assembler / Démonter** | Animation de montage, pièce par pièce |
 | **Progression** | Curseur pour parcourir le montage image par image |
 | **Éclatement** | Écarte les pièces depuis le bateau monté |
@@ -261,6 +263,30 @@ exactement les commandes du visualiseur 3D, sauf que la cible suit le bateau,
 donc on tourne autour et on zoome pendant qu’il navigue. Le bouton du HUD, la
 touche `C` ou la croix de la manette ramènent en poursuite.
 
+**Ce que la v2 a ajouté au pilotage** :
+
+- **Flottaison sur quatre points.** La v1 posait la carène sur la hauteur et la
+  pente de la vague en *un* point : le bateau collait au relief au lieu de le
+  franchir. La v2 sonde l’étrave, le tableau et les deux bords, et en tire
+  l’assiette — sur une vague courte, l’étrave porte encore que le tableau est
+  déjà retombé, et ça se voit.
+- **Déjaugeage.** En déplacement la carène laboure et l’étrave se cabre ; passé
+  la bosse de résistance elle redescend et le bateau s’élève de 6 mm en glissant
+  sur son arrière. Les deux régimes sont interpolés sur la vitesse.
+- **Gerbe de jet.** Le *rooster tail*, signature d’un jet-boat : des gouttes
+  balistiques qui montent, retombent et meurent en touchant l’eau. Elles ne
+  sortent qu’aux gaz. Une deuxième source gicle à l’étrave quand le tableau
+  retombe sur la vague.
+- **Bouées.** En pleine eau, rien ne défile : sans repère fixe, plein gaz et
+  moteur coupé se ressemblent. Un damier ancré au monde, dont seules les mailles
+  proches du bateau sont instanciées, donne le défilement et la parallaxe — et
+  l’océan reste infini.
+- **Vue embarquée**, troisième caméra : l’œil posé sur le pont, qui subit toute
+  l’assiette. C’est là qu’on sent le déjaugeage et les coups de tableau.
+- **Retour de force** : ronflement proportionnel aux gaz, coup sec à l’impact,
+  via `vibrationActuator`. Silencieux et sans erreur sur un pad qui ne l’a pas.
+- **Cap** affiché au HUD et **remise à l’eau** par `R`.
+
 **Le pilotage** reproduit le défaut le plus caractéristique d’un jet-boat :
 **il ne gouverne que sous les gaz**. Il n’y a pas de safran — c’est la tuyère
 qui dévie le jet — donc le lacet naît de la seule composante latérale de la
@@ -289,6 +315,17 @@ est un jet de particules : deux moustaches d’étrave et le remous du jet.
 Rien n’est ajouté au chargement : eau, ciel et particules ne sont construits
 qu’à l’entrée dans le mode, et libérés à la sortie. La boîte de transport, si
 elle est affichée, reste au sec.
+
+## Panneau des pièces
+
+Avec 70 pièces dans une colonne, deux ajouts de la v2 :
+
+- **Recherche** sur le nom ; un intitulé de groupe disparaît quand il ne reste
+  rien dessous, sinon on lit des titres vides.
+- **Clic dans la 3D** : un clic sans glissé lance un rayon, la pièce touchée est
+  surlignée, nommée dans le bandeau, et sa ligne remonte dans le panneau.
+  Re-cliquer désélectionne. C’était le chaînon manquant entre la liste et la
+  maquette.
 
 ## Boîte de transport / de vente
 

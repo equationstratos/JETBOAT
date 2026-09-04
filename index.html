@@ -50,6 +50,13 @@
     #phase.on { opacity: 1 }
     body.guide #phase { display: none }
 
+    header h1 .ver { font-size: .62rem; font-weight: 700; letter-spacing: .06em; color: #0d1117; background: var(--accent); border-radius: 4px; padding: 2px 5px; vertical-align: middle; margin-left: 4px }
+    #parts-search { width: 100%; margin-bottom: 7px; padding: 5px 8px; font: inherit; font-size: .74rem; color: var(--fg); background: #12171d; border: 1px solid var(--border); border-radius: 6px }
+    #parts-search:focus { outline: none; border-color: var(--accent) }
+    .chk.sel { background: rgba(255,85,0,.14); border-radius: 5px }
+    .chk.hidden-row { display: none }
+    .grp-title.hidden-row { display: none }
+
     /* mode pilotage */
     #hud { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); width: min(560px, calc(100vw - 32px)); background: rgba(12,18,26,.9); border: 1px solid var(--border); border-radius: 12px; z-index: 22; display: none; padding: 10px 13px; backdrop-filter: blur(6px) }
     body.play #hud { display: block }
@@ -105,7 +112,7 @@
 
   <div id="ui">
     <header>
-      <h1>🚤 JETBOAT</h1>
+      <h1>🚤 JETBOAT <span class="ver">v2</span></h1>
       <p>RC Mini Jet Boat · jtronics</p>
     </header>
 
@@ -138,6 +145,7 @@
         <button id="btn-hide-all" style="font-size:.7rem" data-i18n="b-none">Masquer</button>
         <button id="btn-fit" style="font-size:.7rem" data-i18n="b-fit">Recadrer</button>
       </div>
+      <input id="parts-search" type="search" placeholder="Rechercher…" data-i18n-ph="ph-search"/>
       <div id="parts-list"></div>
     </div>
 
@@ -157,6 +165,8 @@
       <div class="gauge"><label data-i18n="hud-thr">Gaz</label><div class="bar"><i id="g-thr"></i></div></div>
       <div class="gauge"><label data-i18n="hud-str">Barre</label><div class="bar mid"><i id="g-str"></i></div></div>
       <div class="spd"><b id="g-spd">0.0</b><span>m/s</span></div>
+      <div class="spd"><b id="g-cap">0°</b><span data-i18n="hud-cap">Cap</span></div>
+      <button id="btn-reset" title="R">↺</button>
       <button id="btn-cam" data-i18n="hud-chase">Poursuite</button>
       <button id="btn-play-quit" data-i18n="hud-quit">Quitter</button>
     </div>
@@ -229,12 +239,13 @@
         'g-print':'Pièces imprimées','g-drive':'Transmission','g-elec':'Électronique',
         'g-fix':'Visserie & joints','g-case':'Boîte de rangement',
         'h-guide':'Guide de montage','b-guide':'Guide pas-à-pas','b-quit':'Quitter le guide',
-        'b-play':'Mode pilotage','hud-thr':'Gaz','hud-str':'Barre','hud-quit':'Quitter',
-        'hud-pad':'Manette : stick gauche = barre, R2 = gaz, L2 = marche arrière, stick droit = caméra, croix = repasser en poursuite.',
-        'hud-key':'Manette branchée mais rien ne bouge ? Le navigateur ne la révèle qu’au premier appui : cliquez dans la page puis pressez une touche du pad. En attendant, clavier : ↑/↓ ou Z/S = gaz, ←/→ ou Q/D = barre, Échap = quitter.',
+        'b-play':'Mode pilotage','ph-search':'Rechercher une pièce…','sel-none':'Aucune pièce ici','hud-thr':'Gaz','hud-str':'Barre','hud-quit':'Quitter',
+        'hud-pad':'stick gauche = barre · R2 = gaz · L2 = arrière · stick droit = caméra · ✕ = poursuite',
+        'hud-key':'↑/↓ = gaz · ←/→ = barre · C = caméra · R = remise à l’eau · Échap = quitter — manette branchée mais muette ? Cliquez dans la page puis pressez une touche du pad : le navigateur ne la révèle qu’au premier appui.',
         'hud-wake':'Manette reconnue — appuyez sur une touche du pad pour l’activer.',
-        'hud-orb':' · Souris : glisser pour orbiter, molette pour zoomer — la caméra suit le bateau. C repasse en poursuite.',
-        'hud-chase':'Poursuite','hud-orbit':'Orbite',
+        'hud-orb':'',
+        'hud-chase':'Poursuite','hud-orbit':'Orbite','hud-onboard':'Embarquée',
+        'hud-cap':'Cap','hud-reset':'Remettre à l’eau (R)',
         'g-step':'Étape','g-of':'sur','g-bom':'Pièces de l’étape','g-tip':'À surveiller',
         'ph-flat':'Pièces à plat','ph-done':'Bateau monté',
         'ui-hide':'Masquer le panneau (P)','ui-show':'Afficher le panneau (P)'
@@ -248,12 +259,13 @@
         'g-print':'Printed parts','g-drive':'Drivetrain','g-elec':'Electronics',
         'g-fix':'Fasteners & seals','g-case':'Storage case',
         'h-guide':'Build guide','b-guide':'Step-by-step','b-quit':'Leave guide',
-        'b-play':'Drive it','hud-thr':'Throttle','hud-str':'Steering','hud-quit':'Exit',
-        'hud-pad':'Gamepad: left stick steers, R2 throttle, L2 reverse, right stick camera, cross to snap back to chase.',
-        'hud-key':'Gamepad plugged in but nothing moves? The browser only reveals it on the first press: click in the page, then press a button on the pad. Meanwhile, keyboard: ↑/↓ or W/S throttle, ←/→ or A/D steering, Esc to exit.',
+        'b-play':'Drive it','ph-search':'Search a part…','sel-none':'No part here','hud-thr':'Throttle','hud-str':'Steering','hud-quit':'Exit',
+        'hud-pad':'left stick steers · R2 throttle · L2 reverse · right stick camera · ✕ back to chase',
+        'hud-key':'↑/↓ throttle · ←/→ steering · C camera · R reset · Esc to exit — gamepad plugged in but silent? Click in the page, then press a button on the pad: the browser only reveals it on the first press.',
         'hud-wake':'Gamepad recognised — press a button on the pad to activate it.',
         'hud-orb':' · Mouse: drag to orbit, wheel to zoom — the camera keeps following the boat. C returns to chase.',
-        'hud-chase':'Chase','hud-orbit':'Orbit',
+        'hud-chase':'Chase','hud-orbit':'Orbit','hud-onboard':'Onboard',
+        'hud-cap':'Heading','hud-reset':'Reset to start (R)',
         'g-step':'Step','g-of':'of','g-bom':'Parts for this step','g-tip':'Watch out',
         'ph-flat':'Parts laid out','ph-done':'Boat assembled',
         'ui-hide':'Hide panel (P)','ui-show':'Show panel (P)'
@@ -982,6 +994,29 @@
         }
       }
       document.getElementById('parts-count').textContent = `${n}`;
+      filterList();
+    }
+
+    /* Recherche. 70 pièces dans une colonne, c'est trop pour l'œil : on filtre
+       sur le nom, et un intitulé de groupe disparaît quand il ne reste rien
+       dessous — sinon on lit des titres vides.                               */
+    function filterList() {
+      const q = (document.getElementById('parts-search').value || '')
+        .trim().toLowerCase();
+      const list = document.getElementById('parts-list');
+      let shownInGroup = 0, lastTitle = null;
+      for (const el of list.children) {
+        if (el.classList.contains('grp-title')) {
+          if (lastTitle) lastTitle.classList.toggle('hidden-row', shownInGroup === 0);
+          lastTitle = el; shownInGroup = 0;
+          continue;
+        }
+        const nm = el.querySelector('.nm');
+        const hit = !q || nm.textContent.toLowerCase().includes(q);
+        el.classList.toggle('hidden-row', !hit);
+        if (hit) shownInGroup++;
+      }
+      if (lastTitle) lastTitle.classList.toggle('hidden-row', shownInGroup === 0);
     }
 
     function setLang(l) {
@@ -989,9 +1024,12 @@
       document.getElementById('btn-fr').classList.toggle('active', l === 'fr');
       document.getElementById('btn-en').classList.toggle('active', l === 'en');
       document.querySelectorAll('[data-i18n]').forEach(e => e.textContent = t(e.dataset.i18n));
+      document.querySelectorAll('[data-i18n-ph]').forEach(e => e.placeholder = t(e.dataset.i18nPh));
       document.querySelectorAll('.grp-title').forEach(e => e.textContent = t(e.dataset.grp));
       document.querySelectorAll('#parts-list .nm').forEach(e =>
         e.textContent = PARTS.find(p => p.id === e.dataset.part).name[lang]);
+      if (typeof filterList === 'function') filterList();
+      if (play) { hudHint(); setCamLabel(); }
       const off = document.body.classList.contains('ui-off');
       document.getElementById('ui-toggle').title = t(off ? 'ui-show' : 'ui-hide');
       document.getElementById('btn-guide').textContent = t(guide ? 'b-quit' : 'b-guide');
@@ -1239,6 +1277,55 @@
       return new THREE.CanvasTexture(c);
     }
 
+    // damier de bouées : maille de 1200 mm, 7 x 7 mailles autour du bateau
+    const BUOY_S = 1650, BUOY_R = 3, BUOY_N = (2 * BUOY_R + 1) ** 2;
+    const hash = (a, b) => {
+      const h = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
+      return h - Math.floor(h);
+    };
+
+    function mergeBuoy() {
+      // cône + boule, dans un seul buffer : une InstancedMesh, un draw call
+      const parts = [];
+      const cone = new THREE.ConeGeometry(30, 96, 10); cone.translate(0, 48, 0);
+      const ball = new THREE.SphereGeometry(16, 10, 8);  ball.translate(0, 106, 0);
+      parts.push(cone, ball);
+      const g = new THREE.BufferGeometry();
+      const v = [], n = [];
+      for (const q of parts) {
+        const pa = q.attributes.position, na = q.attributes.normal, idx = q.index;
+        for (let k = 0; k < idx.count; k++) {
+          const i = idx.getX(k);
+          v.push(pa.getX(i), pa.getY(i), pa.getZ(i));
+          n.push(na.getX(i), na.getY(i), na.getZ(i));
+        }
+        q.dispose();
+      }
+      g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+      g.setAttribute('normal', new THREE.Float32BufferAttribute(n, 3));
+      return g;
+    }
+
+    function stepBuoys(p, tm) {
+      const ci = Math.round(p.x / BUOY_S), cj = Math.round(p.z / BUOY_S);
+      const m = new THREE.Matrix4(), q = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1);
+      const pos = new THREE.Vector3(), e = new THREE.Euler();
+      let k = 0;
+      for (let i = -BUOY_R; i <= BUOY_R; i++) {
+        for (let j = -BUOY_R; j <= BUOY_R; j++) {
+          const a = ci + i, b = cj + j;
+          const x = a * BUOY_S + (hash(a, b) - .5) * BUOY_S * 0.7;
+          const z = b * BUOY_S + (hash(b, a) - .5) * BUOY_S * 0.7;
+          const w = {}; waveAt(x, z, tm, w);
+          pos.set(x, w.h - 22, z);
+          e.set(Math.atan(w.dz) * 0.9, 0, -Math.atan(w.dx) * 0.9);
+          m.compose(pos, q.setFromEuler(e), one);
+          p.buoys.setMatrixAt(k++, m);
+        }
+      }
+      p.buoys.instanceMatrix.needsUpdate = true;
+    }
+
     function buildWorld() {
       const water = new THREE.Mesh(
         new THREE.PlaneGeometry(11000, 11000, 220, 220),
@@ -1262,8 +1349,12 @@
             }`
         }));
 
-      // sillage : nappe de particules d'écume lâchées au tableau arrière
-      const N = 720;
+      /* Sillage. V1 ne savait poser que de l'écume à plat sur l'eau. V2 gère
+         deux familles dans le même nuage : `kind` 0, l'écume qui s'étale à la
+         surface ; `kind` 1, les gouttes balistiques — gerbe de jet, moustaches
+         d'étrave, gicle d'impact — qui montent, retombent et meurent en
+         touchant l'eau.                                                       */
+      const N = 1400;
       const pos = new Float32Array(N * 3), siz = new Float32Array(N), alp = new Float32Array(N);
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
@@ -1274,12 +1365,25 @@
         uniforms: { uMap: { value: foamTexture() } },
         vertexShader: `attribute float size; attribute float alpha; varying float vA;
           void main(){ vA = alpha; vec4 mv = modelViewMatrix * vec4(position,1.0);
-            gl_PointSize = size * 320.0 / -mv.z; gl_Position = projectionMatrix * mv; }`,
+            gl_PointSize = min(size * 320.0 / -mv.z, 70.0); gl_Position = projectionMatrix * mv; }`,
         fragmentShader: `uniform sampler2D uMap; varying float vA;
           void main(){ vec4 t = texture2D(uMap, gl_PointCoord); gl_FragColor = vec4(t.rgb, t.a * vA); }`
       }));
       foam.frustumCulled = false;
-      return { water, sky, foam, life: new Float32Array(N), seed: new Float32Array(N), n: N, head: 0 };
+
+      /* Bouées. En pleine eau, rien ne défile : sans repère fixe, plein gaz et
+         moteur coupé se ressemblent. Un damier de bouées ancré au monde, dont
+         on n'instancie que les mailles proches du bateau, donne le défilement
+         et la parallaxe — et l'océan reste infini.                            */
+      const bg = mergeBuoy();
+      const buoys = new THREE.InstancedMesh(bg,
+        new THREE.MeshLambertMaterial({ color: 0xff6a1a }), BUOY_N);
+      buoys.frustumCulled = false;
+      buoys.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+      return { water, sky, foam, buoys, n: N, head: 0,
+               life: new Float32Array(N), seed: new Float32Array(N),
+               kind: new Uint8Array(N),  vel: new Float32Array(N * 3) };
     }
 
     /* --- manette / clavier ----------------------------------------------
@@ -1384,17 +1488,40 @@
       const fx = Math.sin(p.yaw), fz = Math.cos(p.yaw);
       p.x += fx * p.v * dt; p.z += fz * p.v * dt;
 
-      // flottaison : hauteur et pente de la vague sous la carène
-      const w = {};
-      waveAt(p.x, p.z, tm, w);
-      const acc = (p.v - p.prevV) / Math.max(dt, 1e-3); p.prevV = p.v;
-      const trim = THREE.MathUtils.clamp(acc / 2600, -0.10, 0.16) + p.thr * 0.05;
-      const bank = THREE.MathUtils.clamp(-p.r * p.v / 9000, -0.32, 0.32);
+      /* Flottaison. V1 posait la carène sur la hauteur et la pente de la vague
+         en UN point : le bateau collait au relief, il ne le franchissait pas.
+         V2 sonde quatre points de la carène — étrave, tableau, les deux bords —
+         et en tire l'assiette : sur une vague courte l'étrave porte encore que
+         le tableau est déjà retombé, et ça se voit.                          */
+      const hAt = (lx, lz) => waveAt(p.x + lx * fz + lz * fx, p.z - lx * fx + lz * fz, tm);
+      const hBow = hAt(0, 108), hStern = hAt(0, -108), hPort = hAt(42, 0), hStbd = hAt(-42, 0);
+      const w = { h: (hBow + hStern + hPort + hStbd) / 4 };
 
-      boat.position.set(p.x, w.h - 11, p.z);
-      const pitch = Math.atan(w.dx * -fz + w.dz * -fx) * 0.8 - trim;
-      const roll  = Math.atan(w.dx * fz - w.dz * fx) * 0.8 + bank;
-      boat.quaternion.setFromEuler(new THREE.Euler(pitch, p.yaw, roll, 'YXZ'));
+      const acc = (p.v - p.prevV) / Math.max(dt, 1e-3); p.prevV = p.v;
+      const u = Math.abs(p.v) / P_VMAX;
+
+      /* Déjaugeage. En déplacement la carène laboure, l'étrave se cabre ; passé
+         la bosse de résistance elle redescend et le bateau glisse sur son arrière
+         en s'élevant. On interpole entre les deux régimes.                    */
+      const planeGoal = THREE.MathUtils.smoothstep(u, 0.30, 0.80);
+      p.plane += (planeGoal - p.plane) * Math.min(1, dt * 2.0);
+      const hump = Math.sin(Math.PI * THREE.MathUtils.clamp(u / 0.8, 0, 1)) * 0.11;
+      const trim = THREE.MathUtils.clamp(acc / 2600, -0.10, 0.16)
+                 + hump + p.plane * 0.045;
+      const bank = THREE.MathUtils.clamp(-p.r * p.v / 9000, -0.32, 0.32);
+      const draft = -11 + p.plane * 6;                 // la carène monte en glisse
+
+      // pitch positif pique de l'étrave, roll positif lève bâbord (+X)
+      const pWave = -Math.atan2(hBow - hStern, 216);
+      const rWave =  Math.atan2(hPort - hStbd, 84);
+      // impact : le tableau qui retombe sur la vague fait gicler et vibrer
+      const dPitch = (pWave - (p.pWave ?? pWave)) / Math.max(dt, 1e-3);
+      p.pWave = pWave;
+      p.slam = Math.max(0, Math.min(1, Math.abs(dPitch) * u * 0.9));
+
+      boat.position.set(p.x, w.h + draft, p.z);
+      boat.quaternion.setFromEuler(
+        new THREE.Euler(pWave - trim, p.yaw, rWave + bank, 'YXZ'));
 
       // Tuyère braquée autour de la rotule du stator. Sa queue est en -Z ;
       // une rotation de +noz autour de Y l'envoie vers -X, du côté vers lequel
@@ -1406,34 +1533,63 @@
       }
 
       // sillage
-      const pa = p.foam.geometry.attributes;
-      const drop = (wx, wz, spread, s0) => {
+      const pa = p.foam.geometry.attributes, PP = pa.position.array, PV = p.vel;
+      const spawn = (wp, spread, s0, kind, vel) => {
         const i = p.head; p.head = (p.head + 1) % p.n;
-        pa.position.array[i * 3]     = wx + (Math.random() - .5) * spread;
-        pa.position.array[i * 3 + 1] = 2;
-        pa.position.array[i * 3 + 2] = wz + (Math.random() - .5) * spread;
-        p.life[i] = 1; p.seed[i] = s0;
+        PP[i * 3]     = wp.x + (Math.random() - .5) * spread;
+        PP[i * 3 + 1] = wp.y;
+        PP[i * 3 + 2] = wp.z + (Math.random() - .5) * spread;
+        if (vel) { PV[i * 3] = vel.x; PV[i * 3 + 1] = vel.y; PV[i * 3 + 2] = vel.z; }
+        else PV[i * 3] = PV[i * 3 + 1] = PV[i * 3 + 2] = 0;
+        p.life[i] = 1; p.seed[i] = s0; p.kind[i] = kind;
       };
+      const rnd = a => (Math.random() - .5) * a;
       const speed = Math.abs(p.v);
-      const em = Math.min(1, speed / 600) * (0.4 + Math.abs(p.thr));
-      p.emit += em * dt * 130;
+      p.emit += Math.min(1, speed / 600) * (0.4 + Math.abs(p.thr)) * dt * 150;
       while (p.emit >= 1) {
         p.emit -= 1;
-        // deux moustaches d'étrave + le remous du jet, dans le repère bateau
-        const t1 = boat.localToWorld(new THREE.Vector3(-34, 4, 96));
-        const t2 = boat.localToWorld(new THREE.Vector3( 34, 4, 96));
-        const t3 = boat.localToWorld(new THREE.Vector3(  0, 4, -122));
-        drop(t1.x, t1.z, 16, 9);
-        drop(t2.x, t2.z, 16, 9);
-        drop(t3.x, t3.z, 30, 26);
+        // écume plate : les deux moustaches d'étrave et le remous du jet
+        spawn(boat.localToWorld(tmpV.set(-34, 2, 96)), 16, 9, 0);
+        spawn(boat.localToWorld(tmpV.set( 34, 2, 96)), 16, 9, 0);
+        spawn(boat.localToWorld(tmpV.set(  0, 2, -122)), 30, 26, 0);
       }
+      /* Gerbe du jet — le « rooster tail ». Elle ne sort qu'aux gaz et grandit
+         avec eux : c'est la signature d'un jet-boat, une turbine qui crache en
+         l'air derrière le tableau.                                            */
+      p.emitJet += Math.max(0, p.thr) * Math.min(1, speed / 500) * dt * 220;
+      while (p.emitJet >= 1) {
+        p.emitJet -= 1;
+        const back = boat.localToWorld(tmpV.set(0, 14, -128)).clone();
+        const vy = 420 + Math.random() * 380 + speed * 0.14;
+        spawn(back, 9, 4, 1, new THREE.Vector3(
+          -fx * speed * 0.5 + rnd(120), vy, -fz * speed * 0.5 + rnd(120)));
+      }
+      // gicle d'impact quand le tableau retombe sur la vague
+      p.emitSlam += p.slam * dt * 340;
+      while (p.emitSlam >= 1) {
+        p.emitSlam -= 1;
+        const bow = boat.localToWorld(tmpV.set(rnd(70), 4, 92)).clone();
+        spawn(bow, 24, 5, 1, new THREE.Vector3(rnd(420), 300 + Math.random() * 420, rnd(420)));
+      }
+
       for (let i = 0; i < p.n; i++) {
         if (p.life[i] <= 0) { pa.alpha.array[i] = 0; continue; }
-        p.life[i] -= dt / 3.0;
-        const u = 1 - Math.max(0, p.life[i]);
-        pa.position.array[i * 3 + 1] = 2 + waveAt(pa.position.array[i * 3], pa.position.array[i * 3 + 2], tm);
-        pa.size.array[i]  = p.seed[i] + u * 62;
-        pa.alpha.array[i] = Math.max(0, p.life[i]) * 0.62 * (1 - u * 0.35);
+        const j = i * 3;
+        if (p.kind[i]) {                       // goutte balistique
+          p.life[i] -= dt / 1.5;
+          PV[j + 1] -= 2600 * dt;              // pesanteur
+          PP[j] += PV[j] * dt; PP[j + 1] += PV[j + 1] * dt; PP[j + 2] += PV[j + 2] * dt;
+          const surf = waveAt(PP[j], PP[j + 2], tm);
+          if (PP[j + 1] <= surf) { p.life[i] = 0; pa.alpha.array[i] = 0; continue; }
+          pa.size.array[i]  = p.seed[i] + (1 - p.life[i]) * 10;
+          pa.alpha.array[i] = Math.min(1, p.life[i] * 1.6) * 0.8;
+        } else {                               // écume étalée à la surface
+          p.life[i] -= dt / 3.0;
+          const a = 1 - Math.max(0, p.life[i]);
+          PP[j + 1] = 2 + waveAt(PP[j], PP[j + 2], tm);
+          pa.size.array[i]  = p.seed[i] + a * 62;
+          pa.alpha.array[i] = Math.max(0, p.life[i]) * 0.62 * (1 - a * 0.35);
+        }
       }
       pa.position.needsUpdate = pa.size.needsUpdate = pa.alpha.needsUpdate = true;
 
@@ -1443,7 +1599,19 @@
          de la manette (ou le bouton du HUD) ramène en poursuite.           */
       const pivot = new THREE.Vector3(p.x, w.h + 24, p.z);
       if (inp.recentre) setCam('chase');
-      if (p.cam === 'chase') {
+      if (p.cam === 'onboard') {
+        /* Vue embarquée : l'œil est posé sur le pont, derrière le capot, et
+           subit toute l'assiette du bateau. C'est là qu'on sent le déjaugeage
+           et les coups de tableau.                                           */
+        p.cx -= inp.camX * dt * 2.2;
+        p.cy = THREE.MathUtils.clamp(p.cy - inp.camY * dt * 1.4, -0.5, 0.6);
+        boat.updateMatrixWorld(true);
+        camera.position.copy(boat.localToWorld(tmpV.set(0, 62, -46)));
+        camera.quaternion.copy(boat.quaternion);
+        camera.rotateY(Math.PI + p.cx);
+        camera.rotateX(-0.06 + p.cy * 0.5);
+        controls.target.copy(pivot);
+      } else if (p.cam === 'chase') {
         p.cx -= inp.camX * dt * 2.2;
         p.cy = THREE.MathUtils.clamp(p.cy - inp.camY * dt * 1.4, -0.35, 0.9);
         const a = p.yaw + Math.PI + p.cx, dist = 330 + Math.abs(p.v) * 0.075;
@@ -1471,6 +1639,7 @@
         controls.update();
       }
 
+      stepBuoys(p, tm);
       p.water.material.uniforms.uTime.value = tm;
       p.water.material.uniforms.uEye.value.copy(camera.position);
       p.water.position.set(p.x, 0, p.z);
@@ -1482,6 +1651,20 @@
       st.style.width = Math.abs(p.str) * 50 + '%';
       st.style.left = (p.str < 0 ? 50 - Math.abs(p.str) * 50 : 50) + '%';
       document.getElementById('g-spd').textContent = (Math.abs(p.v) / 1000).toFixed(1);
+      const capDeg = ((-p.yaw * 180 / Math.PI) % 360 + 360) % 360;
+      document.getElementById('g-cap').textContent = Math.round(capDeg) + '°';
+
+      // retour de force : ronflement proportionnel aux gaz, coup sec à l'impact
+      p.rumbleT -= dt;
+      if (p.rumbleT <= 0) {
+        const gp = firstPad();
+        if (gp) {
+          const hit = p.slam > 0.25;
+          rumble(gp, hit ? 0.75 : Math.abs(p.thr) * 0.16,
+                     hit ? 0.35 : Math.abs(p.thr) * 0.22, hit ? 130 : 220);
+        }
+        p.rumbleT = 0.2;
+      }
       if (inp.pad !== p.hadPad) { p.hadPad = inp.pad; hudHint(); }
       spinAngle += dt * (6 + Math.abs(p.thr) * 190);
     }
@@ -1491,8 +1674,14 @@
       play.cam = mode;
       controls.enabled = (mode === 'orbit');
       controls.enableDamping = true;
-      document.getElementById('btn-cam').textContent = t(mode === 'orbit' ? 'hud-orbit' : 'hud-chase');
+      setCamLabel();
+
       hudHint();
+    }
+    function setCamLabel() {
+      const m = play ? play.cam : 'chase';
+      document.getElementById('btn-cam').textContent =
+        t(m === 'orbit' ? 'hud-orbit' : m === 'onboard' ? 'hud-onboard' : 'hud-chase');
     }
     function hudHint() {
       const pad = play && play.hadPad;
@@ -1513,7 +1702,7 @@
         document.getElementById('explode-val').textContent = '0%';
         apply();
         const w = buildWorld();
-        scene.add(w.water); scene.add(w.sky); scene.add(w.foam);
+        scene.add(w.water); scene.add(w.sky); scene.add(w.foam); scene.add(w.buoys);
         const oldFog = scene.fog, oldBg = scene.background;
         scene.background = new THREE.Color(0x9fb4c4);
         // le bateau seul embarque : la boîte reste au sec
@@ -1528,17 +1717,19 @@
         document.body.classList.add('play');
         play = Object.assign(w, {
           x: 0, z: 0, yaw: 0, v: 0, r: 0, prevV: 0, thr: 0, str: 0,
-          emit: 0, cx: 0, cy: 0.12, hadPad: null, oldFog, oldBg, vis,
+          emit: 0, emitJet: 0, emitSlam: 0, plane: 0, slam: 0, pWave: 0,
+          cx: 0, cy: 0.12, hadPad: null, oldFog, oldBg, vis, rumbleT: 0,
           noz: items.find(i => i.part.id === 'nozzle'),
           cam: 'chase', look: new THREE.Vector3()
         });
         controls.target.set(0, 24, 0);
-        document.getElementById('btn-cam').textContent = t('hud-chase');
+        setCamLabel();
         camGoal = null;
         hudHint();
       } else {
         const p = play; play = null;
-        scene.remove(p.water); scene.remove(p.sky); scene.remove(p.foam);
+        scene.remove(p.water); scene.remove(p.sky); scene.remove(p.foam); scene.remove(p.buoys);
+        p.buoys.geometry.dispose(); p.buoys.material.dispose();
         p.water.geometry.dispose(); p.water.material.dispose();
         p.sky.geometry.dispose(); p.sky.material.dispose();
         p.foam.geometry.dispose(); p.foam.material.dispose();
@@ -1557,18 +1748,85 @@
       document.getElementById('btn-play').textContent = t('b-play');
     }
 
-    document.getElementById('btn-cam').onclick =
-      () => setCam(play && play.cam === 'orbit' ? 'chase' : 'orbit');
+    const CAM_ORDER = ['chase', 'onboard', 'orbit'];
+    document.getElementById('btn-cam').onclick = () => {
+      if (!play) return;
+      setCam(CAM_ORDER[(CAM_ORDER.indexOf(play.cam) + 1) % CAM_ORDER.length]);
+    };
     // toucher la souris passe en orbite : c'est le geste attendu d'un visu 3D
     renderer.domElement.addEventListener('pointerdown', () => { if (play) setCam('orbit'); });
     renderer.domElement.addEventListener('wheel', () => { if (play) setCam('orbit'); }, { passive: true });
 
+    /* ---------------------------------------------------------------- *
+     *  SÉLECTION D'UNE PIÈCE AU CLIC
+     *  Un clic sans glissé lance un rayon : la pièce touchée est surlignée,
+     *  nommée dans le bandeau, et sa ligne remonte dans le panneau. C'est le
+     *  chaînon qui manquait entre la liste et la maquette.
+     * ---------------------------------------------------------------- */
+    const ray = new THREE.Raycaster();
+    let selected = null, downAt = null;
+
+    function selectPart(part) {
+      if (selected && selected !== part) selected.mat.emissive.setHex(0x000000);
+      if (selected === part) part = null;            // re-cliquer désélectionne
+      selected = part;
+      document.querySelectorAll('#parts-list .chk').forEach(l => {
+        l.classList.toggle('sel', !!part && l.querySelector('.nm').dataset.part === part.id);
+      });
+      if (!part) { phaseEl.classList.remove('on'); return; }
+      if (!guide) part.mat.emissive.setHex(0x40210a);
+      phaseEl.textContent = part.name[lang] + '  ×' + part.at.length;
+      phaseEl.classList.add('on');
+      clearTimeout(showPhase.tid);
+      const row = [...document.querySelectorAll('#parts-list .chk')]
+        .find(l => l.querySelector('.nm').dataset.part === part.id);
+      if (row) row.scrollIntoView({ block: 'nearest' });
+    }
+
+    renderer.domElement.addEventListener('pointerdown', e => {
+      downAt = { x: e.clientX, y: e.clientY };
+    });
+    renderer.domElement.addEventListener('pointerup', e => {
+      if (play || !downAt) return;
+      if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 4) return;  // c'était un glissé
+      const r = renderer.domElement.getBoundingClientRect();
+      ray.setFromCamera(new THREE.Vector2(
+        ((e.clientX - r.left) / r.width) * 2 - 1,
+        -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+      const hits = ray.intersectObjects(items.filter(i => i.obj.visible).map(i => i.obj), true);
+      if (!hits.length) { selectPart(null); return; }
+      let o = hits[0].object;
+      const it = items.find(i => i.obj === o || i.obj === o.parent);
+      selectPart(it ? it.part : null);
+    });
+
+    document.getElementById('parts-search').oninput = filterList;
+    document.getElementById('btn-reset').onclick = resetBoat;
+    document.getElementById('btn-reset').title = 'R';
     document.getElementById('btn-play').onclick = () => setPlay(true);
     document.getElementById('btn-play-quit').onclick = () => setPlay(false);
+    function resetBoat() {
+      if (!play) return;
+      Object.assign(play, { x: 0, z: 0, yaw: 0, v: 0, r: 0, prevV: 0,
+                            thr: 0, str: 0, plane: 0, slam: 0 });
+      for (let i = 0; i < play.n; i++) play.life[i] = 0;
+      setCam('chase');
+    }
+    // retour de force : la manette vibre sous les gaz et encaisse les impacts
+    function rumble(gp, strong, weak, ms) {
+      const a = gp && gp.vibrationActuator;
+      if (!a || !a.playEffect) return;
+      try { a.playEffect('dual-rumble',
+        { duration: ms, strongMagnitude: strong, weakMagnitude: weak }); }
+      catch (_) { /* pad sans retour de force : tant pis, ce n'est qu'un bonus */ }
+    }
+
     addEventListener('keydown', e => {
       if (!play) return;
+      const k = e.key.toLowerCase();
       if (e.key === 'Escape') setPlay(false);
-      else if (e.key.toLowerCase() === 'c') setCam('chase');
+      else if (k === 'c') setCam(CAM_ORDER[(CAM_ORDER.indexOf(play.cam) + 1) % CAM_ORDER.length]);
+      else if (k === 'r') resetBoat();
     });
 
     const clock = new THREE.Clock();
