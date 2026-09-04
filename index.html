@@ -231,7 +231,8 @@
         'h-guide':'Guide de montage','b-guide':'Guide pas-à-pas','b-quit':'Quitter le guide',
         'b-play':'Mode pilotage','hud-thr':'Gaz','hud-str':'Barre','hud-quit':'Quitter',
         'hud-pad':'Manette : stick gauche = barre, R2 = gaz, L2 = marche arrière, stick droit = caméra, croix = repasser en poursuite.',
-        'hud-key':'Aucune manette détectée — clavier : ↑/↓ ou Z/S = gaz, ←/→ ou Q/D = barre, Échap = quitter.',
+        'hud-key':'Manette branchée mais rien ne bouge ? Le navigateur ne la révèle qu’au premier appui : cliquez dans la page puis pressez une touche du pad. En attendant, clavier : ↑/↓ ou Z/S = gaz, ←/→ ou Q/D = barre, Échap = quitter.',
+        'hud-wake':'Manette reconnue — appuyez sur une touche du pad pour l’activer.',
         'hud-orb':' · Souris : glisser pour orbiter, molette pour zoomer — la caméra suit le bateau. C repasse en poursuite.',
         'hud-chase':'Poursuite','hud-orbit':'Orbite',
         'g-step':'Étape','g-of':'sur','g-bom':'Pièces de l’étape','g-tip':'À surveiller',
@@ -249,7 +250,8 @@
         'h-guide':'Build guide','b-guide':'Step-by-step','b-quit':'Leave guide',
         'b-play':'Drive it','hud-thr':'Throttle','hud-str':'Steering','hud-quit':'Exit',
         'hud-pad':'Gamepad: left stick steers, R2 throttle, L2 reverse, right stick camera, cross to snap back to chase.',
-        'hud-key':'No gamepad detected — keyboard: ↑/↓ or W/S throttle, ←/→ or A/D steering, Esc to exit.',
+        'hud-key':'Gamepad plugged in but nothing moves? The browser only reveals it on the first press: click in the page, then press a button on the pad. Meanwhile, keyboard: ↑/↓ or W/S throttle, ←/→ or A/D steering, Esc to exit.',
+        'hud-wake':'Gamepad recognised — press a button on the pad to activate it.',
         'hud-orb':' · Mouse: drag to orbit, wheel to zoom — the camera keeps following the boat. C returns to chase.',
         'hud-chase':'Chase','hud-orbit':'Orbit',
         'g-step':'Step','g-of':'of','g-bom':'Parts for this step','g-tip':'Watch out',
@@ -1280,30 +1282,61 @@
       return { water, sky, foam, life: new Float32Array(N), seed: new Float32Array(N), n: N, head: 0 };
     }
 
-    /* --- manette / clavier ---------------------------------------------- */
+    /* --- manette / clavier ----------------------------------------------
+       Chrome n'expose une manette qu'APRÈS un premier appui bouton, page au
+       premier plan : `navigator.getGamepads()` renvoie des cases vides tant
+       que ce n'est pas fait, même si le pad est parfaitement appairé. D'où
+       l'écoute de `gamepadconnected`, et le message d'aide explicite.        */
     const keys = new Set();
     addEventListener('keydown', e => { if (play) keys.add(e.key.toLowerCase()); });
     addEventListener('keyup',   e => keys.delete(e.key.toLowerCase()));
 
-    function readInput() {
+    let padName = null;
+    addEventListener('gamepadconnected',    e => {
+      padName = (e && e.gamepad && e.gamepad.id) || 'manette'; if (play) hudHint();
+    });
+    addEventListener('gamepaddisconnected', e => { padName = null; if (play) hudHint(); });
+
+    function firstPad() {
       const pads = navigator.getGamepads ? navigator.getGamepads() : [];
-      let gp = null;
-      for (const p of pads) if (p && p.connected) { gp = p; break; }
+      for (const g of pads) if (g && g.connected) return g;
+      return null;
+    }
+
+    function readInput() {
+      const gp = firstPad();
       const dz = v => Math.abs(v) < 0.12 ? 0 : (v - Math.sign(v) * 0.12) / 0.88;
       let thr = 0, str = 0, camX = 0, camY = 0, recentre = false;
       if (gp) {
-        const b = i => gp.buttons[i] ? (gp.buttons[i].value || (gp.buttons[i].pressed ? 1 : 0)) : 0;
-        thr = b(7) - b(6) * 0.6;                       // R2 avant, L2 arrière
-        if (Math.abs(thr) < 0.02) thr = -dz(gp.axes[1] ?? 0);   // repli : stick gauche
-        str = dz(gp.axes[0] ?? 0);
-        camX = dz(gp.axes[2] ?? 0); camY = dz(gp.axes[3] ?? 0);
-        recentre = b(0) > 0.5;
+        const nb = gp.buttons.length, na = gp.axes.length;
+        const b = i => (i < nb && gp.buttons[i])
+          ? (gp.buttons[i].value || (gp.buttons[i].pressed ? 1 : 0)) : 0;
+        const ax = i => i < na ? (gp.axes[i] ?? 0) : 0;
+
+        if (gp.mapping === 'standard' || nb >= 8) {
+          thr = b(7) - b(6) * 0.6;                     // R2 avant, L2 arrière
+          str = dz(ax(0));
+          camX = dz(ax(2)); camY = dz(ax(3));
+          recentre = b(0) > 0.5;
+        } else {
+          /* Mapping non standard (DualShock en DirectInput sous Firefox, par
+             exemple) : les gâchettes arrivent sur des axes au repos à -1, et
+             le stick droit se décale d'un cran.                             */
+          const tr = i => i < na ? (ax(i) + 1) / 2 : 0;
+          thr = tr(5) - tr(4) * 0.6;
+          str = dz(ax(0));
+          camX = dz(ax(2)); camY = dz(ax(na > 5 ? 5 : 3));
+          recentre = b(0) > 0.5 || b(1) > 0.5;
+        }
+        // Repli universel : si rien n'est arrivé par les gâchettes, le stick
+        // gauche en Y fait les gaz. Une manette mal mappée reste jouable.
+        if (Math.abs(thr) < 0.02) thr = -dz(ax(1));
       }
       const K = k => keys.has(k) ? 1 : 0;
       thr += K('arrowup') + K('z') + K('w') - 0.6 * (K('arrowdown') + K('s'));
       str += K('arrowright') + K('d') - (K('arrowleft') + K('q') + K('a'));
       return {
-        pad: !!gp,
+        pad: gp ? (gp.id || 'manette') : null,
         thr: THREE.MathUtils.clamp(thr, -0.6, 1),
         str: THREE.MathUtils.clamp(str, -1, 1),
         camX, camY, recentre
@@ -1334,11 +1367,16 @@
       // P_DRAG = P_THRUST / P_VMAX² : la vitesse limite tombe pile sur P_VMAX.
       p.v += (thrust * Math.cos(noz) - P_DRAG * p.v * Math.abs(p.v)) * dt;
       p.v = THREE.MathUtils.clamp(p.v, -P_VMAX * 0.35, P_VMAX);
-      // Lacet : uniquement la composante latérale du jet. Tuyère braquée à
-      // tribord, le jet part à tribord, l'arrière chasse à bâbord, l'étrave
-      // vient à tribord — donc lacet POSITIF. Le signe était inversé et le
-      // bateau tournait à l'opposé de sa propre tuyère.
-      p.r += (Math.sin(noz) * thrust * P_YAW / 1000 - p.r * P_YAWD) * dt;
+      /* Lacet : uniquement la composante latérale du jet.
+         Attention au repère, c'est là que je me suis trompé deux fois.
+         L'étrave est en +Z. Caméra derrière le bateau, elle regarde donc vers
+         +Z, et l'axe monde +X part alors vers la GAUCHE de l'écran
+         (right = cross(regard, haut) = (0,0,1)×(0,1,0) = (-1,0,0)).
+         Le +X local du modèle est donc BÂBORD, pas tribord.
+         Barre à droite, on veut l'étrave vers la droite de l'écran, c'est-à-
+         dire vers -X : cap = (sin yaw, cos yaw) doit voir son sin diminuer,
+         donc lacet NÉGATIF. Et la tuyère doit envoyer le jet vers -X.        */
+      p.r += (-Math.sin(noz) * thrust * P_YAW / 1000 - p.r * P_YAWD) * dt;
       p.yaw += p.r * dt;
       // en virage serré la carène ripe et freine — c'est ce qui resserre le rayon
       p.v -= Math.abs(Math.sin(noz)) * p.v * P_SCRUB * dt;
@@ -1358,9 +1396,11 @@
       const roll  = Math.atan(w.dx * fz - w.dz * fx) * 0.8 + bank;
       boat.quaternion.setFromEuler(new THREE.Euler(pitch, p.yaw, roll, 'YXZ'));
 
-      // tuyère braquée autour de la rotule du stator
+      // Tuyère braquée autour de la rotule du stator. Sa queue est en -Z ;
+      // une rotation de +noz autour de Y l'envoie vers -X, du côté vers lequel
+      // le bateau doit tourner — les deux vont enfin dans le même sens.
       if (p.noz) {
-        const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -noz);
+        const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), noz);
         p.noz.obj.position.copy(p.noz.asmPos).sub(NOZ_PIVOT).applyQuaternion(q).add(NOZ_PIVOT);
         p.noz.obj.quaternion.copy(q).multiply(p.noz.asmQuat);
       }
@@ -1455,7 +1495,11 @@
       hudHint();
     }
     function hudHint() {
-      const base = t(play && play.hadPad ? 'hud-pad' : 'hud-key');
+      const pad = play && play.hadPad;
+      let base;
+      if (pad) base = '🎮 ' + String(pad).slice(0, 46) + ' — ' + t('hud-pad');
+      else if (padName) base = t('hud-wake');            // annoncée mais muette
+      else base = t('hud-key');
       document.getElementById('hud-hint').textContent = base + t('hud-orb');
     }
 

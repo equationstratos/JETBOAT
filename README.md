@@ -228,9 +228,32 @@ celui que la DualShock 4 expose nativement en USB comme en Bluetooth :
 | Repasser en poursuite | `✕` | `C` |
 | Quitter | — | `Échap` |
 
-Le HUD affiche gaz, barre et vitesse, et bascule tout seul entre les deux
-aides selon qu’une manette est branchée ou non. Brancher la manette **après**
-être entré dans le mode fonctionne : la détection est refaite à chaque image.
+Le HUD affiche gaz, barre et vitesse, et nomme la manette dès qu’elle répond.
+Brancher la manette **après** être entré dans le mode fonctionne : la détection
+est refaite à chaque image, et l’événement `gamepadconnected` est écouté.
+
+⚠️ **Manette branchée mais rien ne bouge ?** C’est le navigateur, pas le code :
+Chrome n’expose une manette qu’**au premier appui bouton, page au premier
+plan**. `navigator.getGamepads()` ne renvoie que des cases vides tant que ce
+n’est pas fait, même sur un pad parfaitement appairé. Cliquez dans la page,
+pressez une touche du pad, et le HUD affiche son nom. Le message d’aide le dit
+explicitement.
+
+Le mapping *standard* (celui de la DualShock 4 en USB comme en Bluetooth) est
+la voie normale, mais un pad en mapping non standard — DirectInput sous
+Firefox, par exemple — est rattrapé : gâchettes lues sur les axes, stick droit
+décalé d’un cran. Et en dernier recours, le stick gauche en Y fait les gaz,
+donc une manette même mal reconnue reste jouable.
+
+**Sens de barre** — j’ai inversé le mauvais des deux signes une première fois,
+donc le repère est noté noir sur blanc dans le code. L’étrave est en `+Z` ;
+caméra derrière le bateau, elle regarde vers `+Z`, et
+`droite_écran = regard × haut = (0,0,1) × (0,1,0) = (-1,0,0)` : **le `+X` local
+du modèle est bâbord**. Barre à droite, l’étrave doit donc aller vers `-X`,
+c’est-à-dire lacet *négatif*, et la tuyère doit envoyer le jet du même côté.
+Vérifié en mesure et non par raisonnement : la variation du cap projetée sur le
+vecteur droite réel de la caméra vaut **+0.75**, et le déport de la tuyère
+**−3.5 mm**, tous deux du côté attendu.
 
 **Deux caméras.** Par défaut, **poursuite** dans l’axe du bateau. Dès qu’on
 touche la souris — glisser ou molette — on bascule en **orbite** : ce sont
