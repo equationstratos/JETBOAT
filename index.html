@@ -50,6 +50,24 @@
     #phase.on { opacity: 1 }
     body.guide #phase { display: none }
 
+    /* mode pilotage */
+    #hud { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); width: min(560px, calc(100vw - 32px)); background: rgba(12,18,26,.9); border: 1px solid var(--border); border-radius: 12px; z-index: 22; display: none; padding: 10px 13px; backdrop-filter: blur(6px) }
+    body.play #hud { display: block }
+    body.play #phase, body.play #card { display: none }
+    #hud .hrow { display: flex; align-items: center; gap: 13px }
+    #hud .gauge { flex: 1; min-width: 0 }
+    #hud .gauge label { display: block; font-size: .62rem; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px }
+    #hud .bar { position: relative; height: 7px; border-radius: 4px; background: #1d232c; overflow: hidden }
+    #hud .bar i { position: absolute; top: 0; bottom: 0; left: 0; width: 0; background: var(--accent); border-radius: 4px }
+    #hud .bar.mid i { left: 50%; width: 0 }
+    #hud .spd { text-align: right; white-space: nowrap }
+    #hud .spd b { font-size: 1.15rem; font-variant-numeric: tabular-nums }
+    #hud .spd span { font-size: .62rem; color: var(--muted); margin-left: 3px }
+    #hud button { flex: none }
+    #hud .hint { margin-top: 8px; font-size: .68rem; line-height: 1.45; color: var(--muted) }
+    body.play #ui { display: none }
+    body.play #ui-toggle { display: none }
+
     /* fiche d'étape du guide */
     #card { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); width: min(620px, calc(100vw - 40px)); background: rgba(22,27,34,.97); border: 1px solid var(--border); border-radius: 12px; z-index: 21; display: none; box-shadow: 0 10px 34px rgba(0,0,0,.45) }
     body.guide #card { display: block }
@@ -102,6 +120,9 @@
       <div class="btn-row" style="margin-top:9px">
         <button id="btn-guide" class="primary" data-i18n="b-guide">Guide pas-à-pas</button>
       </div>
+      <div class="btn-row" style="margin-top:9px">
+        <button id="btn-play" class="primary" data-i18n="b-play">Mode pilotage</button>
+      </div>
     </div>
 
     <div class="section">
@@ -130,6 +151,16 @@
   </div>
 
   <div id="phase"></div>
+
+  <div id="hud">
+    <div class="hrow">
+      <div class="gauge"><label data-i18n="hud-thr">Gaz</label><div class="bar"><i id="g-thr"></i></div></div>
+      <div class="gauge"><label data-i18n="hud-str">Barre</label><div class="bar mid"><i id="g-str"></i></div></div>
+      <div class="spd"><b id="g-spd">0.0</b><span>m/s</span></div>
+      <button id="btn-play-quit" data-i18n="hud-quit">Quitter</button>
+    </div>
+    <div class="hint" id="hud-hint"></div>
+  </div>
 
   <div id="card">
     <div class="bar">
@@ -197,6 +228,9 @@
         'g-print':'Pièces imprimées','g-drive':'Transmission','g-elec':'Électronique',
         'g-fix':'Visserie & joints','g-case':'Boîte de rangement',
         'h-guide':'Guide de montage','b-guide':'Guide pas-à-pas','b-quit':'Quitter le guide',
+        'b-play':'Mode pilotage','hud-thr':'Gaz','hud-str':'Barre','hud-quit':'Quitter',
+        'hud-pad':'Manette : stick gauche = barre, R2 = gaz, L2 = marche arrière, stick droit = caméra, croix = recentrer.',
+        'hud-key':'Aucune manette détectée — clavier : ↑/↓ ou Z/S = gaz, ←/→ ou Q/D = barre, C = caméra, Échap = quitter.',
         'g-step':'Étape','g-of':'sur','g-bom':'Pièces de l’étape','g-tip':'À surveiller',
         'ph-flat':'Pièces à plat','ph-done':'Bateau monté',
         'ui-hide':'Masquer le panneau (P)','ui-show':'Afficher le panneau (P)'
@@ -210,6 +244,9 @@
         'g-print':'Printed parts','g-drive':'Drivetrain','g-elec':'Electronics',
         'g-fix':'Fasteners & seals','g-case':'Storage case',
         'h-guide':'Build guide','b-guide':'Step-by-step','b-quit':'Leave guide',
+        'b-play':'Drive it','hud-thr':'Throttle','hud-str':'Steering','hud-quit':'Exit',
+        'hud-pad':'Gamepad: left stick steers, R2 throttle, L2 reverse, right stick camera, cross to recentre.',
+        'hud-key':'No gamepad detected — keyboard: ↑/↓ or W/S throttle, ←/→ or A/D steering, C camera, Esc to exit.',
         'g-step':'Step','g-of':'of','g-bom':'Parts for this step','g-tip':'Watch out',
         'ph-flat':'Parts laid out','ph-done':'Boat assembled',
         'ui-hide':'Hide panel (P)','ui-show':'Show panel (P)'
@@ -1105,14 +1142,351 @@
       renderer.setSize(innerWidth, innerHeight);
     });
 
+
+    /* ==================================================================== *
+     *  MODE PILOTAGE
+     *  Le bateau monté est reparenté dans un groupe `boat` que l'on déplace
+     *  sur un plan d'eau. `apply()` continue d'écrire des transformations
+     *  LOCALES dans chaque objet : à asm = 1 ce sont exactement les positions
+     *  d'assemblage, qui deviennent les offsets des pièces dans le repère du
+     *  bateau. Rien d'autre à changer.
+     * ==================================================================== */
+
+    /* Houle : somme de quatre sinusoïdes. La même fonction tourne côté GPU
+       (déplacement du maillage) et côté CPU (flottaison), avec les mêmes
+       coefficients — sinon le bateau ne suivrait pas la vague qu'il montre. */
+    const WAVES = [   // amplitude, longueur d'onde, vitesse, direction (rad)
+      [ 4.5, 620, 0.55, 0.30],
+      [ 2.6, 330, 0.80, 1.15],
+      [ 1.2, 170, 1.20, -0.60],
+      [ 0.6,  95, 1.70, 2.30],
+    ];
+    function waveAt(x, z, t, out) {
+      let h = 0, dx = 0, dz = 0;
+      for (const [a, L, sp, ang] of WAVES) {
+        const k = 2 * Math.PI / L, dirx = Math.cos(ang), dirz = Math.sin(ang);
+        const ph = k * (dirx * x + dirz * z) + t * sp * k * 60;
+        h += a * Math.sin(ph);
+        const c = a * k * Math.cos(ph);
+        dx += c * dirx; dz += c * dirz;
+      }
+      if (out) { out.h = h; out.dx = dx; out.dz = dz; }
+      return h;
+    }
+
+    const WATER_VS = `
+      uniform float uTime;
+      varying vec3 vW; varying vec3 vN;
+      ${WAVES.map(([a, L, sp, ang], i) =>
+        `const vec4 W${i} = vec4(${a.toFixed(3)}, ${(2 * Math.PI / L).toFixed(6)}, ${(sp * 60).toFixed(4)}, ${ang.toFixed(4)});`).join('\n      ')}
+      void main() {
+        vec4 wp = modelMatrix * vec4(position, 1.0);
+        float h = 0.0, dx = 0.0, dz = 0.0;
+        ${WAVES.map((_, i) => `{
+          vec2 d = vec2(cos(W${i}.w), sin(W${i}.w));
+          float ph = W${i}.y * dot(d, wp.xz) + uTime * W${i}.z * W${i}.y;
+          h += W${i}.x * sin(ph);
+          float c = W${i}.x * W${i}.y * cos(ph);
+          dx += c * d.x; dz += c * d.y;
+        }`).join('\n        ')}
+        wp.y += h;
+        vW = wp.xyz;
+        vN = normalize(vec3(-dx, 1.0, -dz));
+        gl_Position = projectionMatrix * viewMatrix * wp;
+      }`;
+
+    const WATER_FS = `
+      precision highp float;
+      uniform vec3 uEye; uniform float uTime;
+      varying vec3 vW; varying vec3 vN;
+      void main() {
+        vec3 n = normalize(vN);
+        vec3 v = normalize(uEye - vW);
+        float f = pow(1.0 - max(dot(n, v), 0.0), 4.0);            // Fresnel
+        vec3 deep    = vec3(0.030, 0.105, 0.150);
+        vec3 shallow = vec3(0.075, 0.250, 0.290);
+        vec3 sky     = vec3(0.400, 0.560, 0.680);
+        vec3 col = mix(deep, shallow, clamp(n.y * 0.5 + 0.5, 0.0, 1.0));
+        col = mix(col, sky, clamp(f, 0.0, 0.9));
+        vec3 l = normalize(vec3(0.45, 0.72, 0.32));
+        float spec = pow(max(dot(reflect(-l, n), v), 0.0), 90.0);
+        col += vec3(1.0, 0.97, 0.90) * spec * 0.85;
+        float crest = smoothstep(3.5, 6.5, vW.y);                  // écume de crête
+        col = mix(col, vec3(0.82, 0.88, 0.92), crest * 0.35);
+        float fog = 1.0 - exp(-pow(length(vW.xz) / 5200.0, 2.4));
+        col = mix(col, vec3(0.62, 0.71, 0.80), clamp(fog, 0.0, 1.0));
+        gl_FragColor = vec4(col, 1.0);
+      }`;
+
+    let play = null;                       // état du mode pilotage
+    const boat = new THREE.Group();
+    scene.add(boat);
+
+    function foamTexture() {
+      const c = document.createElement('canvas'); c.width = c.height = 64;
+      const g = c.getContext('2d').createRadialGradient(32, 32, 0, 32, 32, 32);
+      g.addColorStop(0, 'rgba(255,255,255,.95)');
+      g.addColorStop(0.45, 'rgba(226,240,246,.42)');
+      g.addColorStop(1, 'rgba(226,240,246,0)');
+      const x = c.getContext('2d'); x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+      return new THREE.CanvasTexture(c);
+    }
+
+    function buildWorld() {
+      const water = new THREE.Mesh(
+        new THREE.PlaneGeometry(11000, 11000, 220, 220),
+        new THREE.ShaderMaterial({
+          vertexShader: WATER_VS, fragmentShader: WATER_FS,
+          uniforms: { uTime: { value: 0 }, uEye: { value: new THREE.Vector3() } }
+        }));
+      water.rotation.x = -Math.PI / 2;
+
+      const sky = new THREE.Mesh(
+        new THREE.SphereGeometry(6000, 32, 20),
+        new THREE.ShaderMaterial({
+          side: THREE.BackSide,
+          vertexShader: 'varying vec3 vP; void main(){ vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+          fragmentShader: `varying vec3 vP;
+            void main() {
+              float h = clamp(vP.y / 6000.0, -1.0, 1.0);
+              vec3 top = vec3(0.24, 0.42, 0.66), mid = vec3(0.62, 0.74, 0.84), low = vec3(0.72, 0.76, 0.78);
+              vec3 c = h > 0.0 ? mix(mid, top, pow(h, 0.65)) : mix(mid, low, -h);
+              gl_FragColor = vec4(c, 1.0);
+            }`
+        }));
+
+      // sillage : nappe de particules d'écume lâchées au tableau arrière
+      const N = 720;
+      const pos = new Float32Array(N * 3), siz = new Float32Array(N), alp = new Float32Array(N);
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      g.setAttribute('size', new THREE.BufferAttribute(siz, 1));
+      g.setAttribute('alpha', new THREE.BufferAttribute(alp, 1));
+      const foam = new THREE.Points(g, new THREE.ShaderMaterial({
+        transparent: true, depthWrite: false, blending: THREE.NormalBlending,
+        uniforms: { uMap: { value: foamTexture() } },
+        vertexShader: `attribute float size; attribute float alpha; varying float vA;
+          void main(){ vA = alpha; vec4 mv = modelViewMatrix * vec4(position,1.0);
+            gl_PointSize = size * 320.0 / -mv.z; gl_Position = projectionMatrix * mv; }`,
+        fragmentShader: `uniform sampler2D uMap; varying float vA;
+          void main(){ vec4 t = texture2D(uMap, gl_PointCoord); gl_FragColor = vec4(t.rgb, t.a * vA); }`
+      }));
+      foam.frustumCulled = false;
+      return { water, sky, foam, life: new Float32Array(N), seed: new Float32Array(N), n: N, head: 0 };
+    }
+
+    /* --- manette / clavier ---------------------------------------------- */
+    const keys = new Set();
+    addEventListener('keydown', e => { if (play) keys.add(e.key.toLowerCase()); });
+    addEventListener('keyup',   e => keys.delete(e.key.toLowerCase()));
+
+    function readInput() {
+      const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+      let gp = null;
+      for (const p of pads) if (p && p.connected) { gp = p; break; }
+      const dz = v => Math.abs(v) < 0.12 ? 0 : (v - Math.sign(v) * 0.12) / 0.88;
+      let thr = 0, str = 0, camX = 0, camY = 0, recentre = false;
+      if (gp) {
+        const b = i => gp.buttons[i] ? (gp.buttons[i].value || (gp.buttons[i].pressed ? 1 : 0)) : 0;
+        thr = b(7) - b(6) * 0.6;                       // R2 avant, L2 arrière
+        if (Math.abs(thr) < 0.02) thr = -dz(gp.axes[1] ?? 0);   // repli : stick gauche
+        str = dz(gp.axes[0] ?? 0);
+        camX = dz(gp.axes[2] ?? 0); camY = dz(gp.axes[3] ?? 0);
+        recentre = b(0) > 0.5;
+      }
+      const K = k => keys.has(k) ? 1 : 0;
+      thr += K('arrowup') + K('z') + K('w') - 0.6 * (K('arrowdown') + K('s'));
+      str += K('arrowright') + K('d') - (K('arrowleft') + K('q') + K('a'));
+      if (keys.has('c')) recentre = true;
+      return {
+        pad: !!gp,
+        thr: THREE.MathUtils.clamp(thr, -0.6, 1),
+        str: THREE.MathUtils.clamp(str, -1, 1),
+        camX, camY, recentre
+      };
+    }
+
+    /* --- physique -------------------------------------------------------- */
+    /* Un jet-boat ne gouverne que sous les gaz : la tuyère dévie le jet, il
+       n'y a pas de safran. Couper les gaz en virage, c'est perdre la barre —
+       le modèle le reproduit, le lacet vient du seul jet.                   */
+    const P_VMAX = 2600,                       // vitesse limite, mm/s (2.6 m/s)
+          P_THRUST = 2600,                     // accélération plein gaz, mm/s²
+          P_DRAG = P_THRUST / (P_VMAX * P_VMAX),
+          P_YAW = 2.2, P_YAWD = 2.2, P_NOZ = 0.52;
+    const NOZ_PIVOT = new THREE.Vector3(0, 15.11, -86.66);   // rotule du stator (monde)
+
+    function stepPlay(dt, tm) {
+      const inp = readInput();
+      const p = play;
+      p.thr += (inp.thr - p.thr) * Math.min(1, dt * 6);
+      p.str += (inp.str - p.str) * Math.min(1, dt * 7);
+
+      const noz = p.str * P_NOZ;                       // braquage de la tuyère
+      const thrust = p.thr * P_THRUST;
+      // dv/dt = poussée·cos(braquage) − traînée quadratique.
+      // P_DRAG = P_THRUST / P_VMAX² : la vitesse limite tombe pile sur P_VMAX.
+      p.v += (thrust * Math.cos(noz) - P_DRAG * p.v * Math.abs(p.v)) * dt;
+      p.v = THREE.MathUtils.clamp(p.v, -P_VMAX * 0.35, P_VMAX);
+      // lacet : uniquement la composante latérale du jet
+      p.r += (-Math.sin(noz) * thrust * P_YAW / 1000 - p.r * P_YAWD) * dt;
+      p.yaw += p.r * dt;
+
+      const fx = Math.sin(p.yaw), fz = Math.cos(p.yaw);
+      p.x += fx * p.v * dt; p.z += fz * p.v * dt;
+
+      // flottaison : hauteur et pente de la vague sous la carène
+      const w = {};
+      waveAt(p.x, p.z, tm, w);
+      const acc = (p.v - p.prevV) / Math.max(dt, 1e-3); p.prevV = p.v;
+      const trim = THREE.MathUtils.clamp(acc / 2600, -0.10, 0.16) + p.thr * 0.05;
+      const bank = THREE.MathUtils.clamp(-p.r * p.v / 9000, -0.32, 0.32);
+
+      boat.position.set(p.x, w.h - 11, p.z);
+      const pitch = Math.atan(w.dx * -fz + w.dz * -fx) * 0.8 - trim;
+      const roll  = Math.atan(w.dx * fz - w.dz * fx) * 0.8 + bank;
+      boat.quaternion.setFromEuler(new THREE.Euler(pitch, p.yaw, roll, 'YXZ'));
+
+      // tuyère braquée autour de la rotule du stator
+      if (p.noz) {
+        const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -noz);
+        p.noz.obj.position.copy(p.noz.asmPos).sub(NOZ_PIVOT).applyQuaternion(q).add(NOZ_PIVOT);
+        p.noz.obj.quaternion.copy(q).multiply(p.noz.asmQuat);
+      }
+
+      // sillage
+      const pa = p.foam.geometry.attributes;
+      const drop = (wx, wz, spread, s0) => {
+        const i = p.head; p.head = (p.head + 1) % p.n;
+        pa.position.array[i * 3]     = wx + (Math.random() - .5) * spread;
+        pa.position.array[i * 3 + 1] = 2;
+        pa.position.array[i * 3 + 2] = wz + (Math.random() - .5) * spread;
+        p.life[i] = 1; p.seed[i] = s0;
+      };
+      const speed = Math.abs(p.v);
+      const em = Math.min(1, speed / 600) * (0.4 + Math.abs(p.thr));
+      p.emit += em * dt * 130;
+      while (p.emit >= 1) {
+        p.emit -= 1;
+        // deux moustaches d'étrave + le remous du jet, dans le repère bateau
+        const t1 = boat.localToWorld(new THREE.Vector3(-34, 4, 96));
+        const t2 = boat.localToWorld(new THREE.Vector3( 34, 4, 96));
+        const t3 = boat.localToWorld(new THREE.Vector3(  0, 4, -122));
+        drop(t1.x, t1.z, 16, 9);
+        drop(t2.x, t2.z, 16, 9);
+        drop(t3.x, t3.z, 30, 26);
+      }
+      for (let i = 0; i < p.n; i++) {
+        if (p.life[i] <= 0) { pa.alpha.array[i] = 0; continue; }
+        p.life[i] -= dt / 3.0;
+        const u = 1 - Math.max(0, p.life[i]);
+        pa.position.array[i * 3 + 1] = 2 + waveAt(pa.position.array[i * 3], pa.position.array[i * 3 + 2], tm);
+        pa.size.array[i]  = p.seed[i] + u * 62;
+        pa.alpha.array[i] = Math.max(0, p.life[i]) * 0.62 * (1 - u * 0.35);
+      }
+      pa.position.needsUpdate = pa.size.needsUpdate = pa.alpha.needsUpdate = true;
+
+      // caméra de poursuite
+      if (inp.recentre) { p.cx = 0; p.cy = 0; }
+      p.cx -= inp.camX * dt * 2.2; p.cy = THREE.MathUtils.clamp(p.cy - inp.camY * dt * 1.4, -0.35, 0.9);
+      const a = p.yaw + Math.PI + p.cx, dist = 330 + Math.abs(p.v) * 0.075;
+      const goal = new THREE.Vector3(
+        p.x + Math.sin(a) * dist * Math.cos(p.cy * 0.7),
+        w.h + 92 + p.cy * 210,
+        p.z + Math.cos(a) * dist * Math.cos(p.cy * 0.7));
+      camera.position.lerp(goal, Math.min(1, dt * 3.2));
+      p.look.lerp(new THREE.Vector3(p.x + fx * 70, w.h + 26, p.z + fz * 70), Math.min(1, dt * 5));
+      camera.lookAt(p.look);
+
+      p.water.material.uniforms.uTime.value = tm;
+      p.water.material.uniforms.uEye.value.copy(camera.position);
+      p.water.position.set(p.x, 0, p.z);
+      p.sky.position.set(p.x, 0, p.z);
+
+      // HUD
+      document.getElementById('g-thr').style.width = Math.max(0, p.thr) * 100 + '%';
+      const st = document.getElementById('g-str');
+      st.style.width = Math.abs(p.str) * 50 + '%';
+      st.style.left = (p.str < 0 ? 50 - Math.abs(p.str) * 50 : 50) + '%';
+      document.getElementById('g-spd').textContent = (Math.abs(p.v) / 1000).toFixed(1);
+      if (inp.pad !== p.hadPad) {
+        p.hadPad = inp.pad;
+        document.getElementById('hud-hint').textContent = t(inp.pad ? 'hud-pad' : 'hud-key');
+      }
+      spinAngle += dt * (6 + Math.abs(p.thr) * 190);
+    }
+
+    function setPlay(on) {
+      if (on === !!play) return;
+      if (on) {
+        if (guide) setGuide(false);
+        setAsm(1); target = null;
+        explodeAmount = 0;
+        document.getElementById('explode-slider').value = 0;
+        document.getElementById('explode-val').textContent = '0%';
+        apply();
+        const w = buildWorld();
+        scene.add(w.water); scene.add(w.sky); scene.add(w.foam);
+        const oldFog = scene.fog, oldBg = scene.background;
+        scene.background = new THREE.Color(0x9fb4c4);
+        // le bateau seul embarque : la boîte reste au sec
+        const vis = new Map();
+        for (const it of items) {
+          vis.set(it.obj, it.obj.visible);
+          if (it.part.grp === 'g-case') it.obj.visible = false;   // la boîte reste au sec
+          else boat.add(it.obj);
+        }
+        grid.visible = false;
+        controls.enabled = false;
+        document.body.classList.add('play');
+        play = Object.assign(w, {
+          x: 0, z: 0, yaw: 0, v: 0, r: 0, prevV: 0, thr: 0, str: 0,
+          emit: 0, cx: 0, cy: 0.12, hadPad: null, oldFog, oldBg, vis,
+          noz: items.find(i => i.part.id === 'nozzle'),
+          look: new THREE.Vector3()
+        });
+        camGoal = null;
+        document.getElementById('hud-hint').textContent = t('hud-key');
+      } else {
+        const p = play; play = null;
+        scene.remove(p.water); scene.remove(p.sky); scene.remove(p.foam);
+        p.water.geometry.dispose(); p.water.material.dispose();
+        p.sky.geometry.dispose(); p.sky.material.dispose();
+        p.foam.geometry.dispose(); p.foam.material.dispose();
+        scene.background = p.oldBg; scene.fog = p.oldFog;
+        boat.position.set(0, 0, 0); boat.quaternion.identity();
+        for (const it of items) {
+          scene.add(it.obj);
+          if (p.vis.has(it.obj)) it.obj.visible = p.vis.get(it.obj);
+        }
+        grid.visible = document.getElementById('chk-grid').checked;
+        controls.enabled = true;
+        document.body.classList.remove('play');
+        apply();
+        fitCamera(true);
+      }
+      document.getElementById('btn-play').textContent = t('b-play');
+    }
+
+    document.getElementById('btn-play').onclick = () => setPlay(true);
+    document.getElementById('btn-play-quit').onclick = () => setPlay(false);
+    addEventListener('keydown', e => { if (play && e.key === 'Escape') setPlay(false); });
+
     const clock = new THREE.Clock();
     function animate() {
       requestAnimationFrame(animate);
       const dt = Math.min(clock.getDelta(), 0.05);
-      stepAnim(dt);
-      stepCam(dt);
-      if (spinOn) {
-        spinAngle += dt * 12;
+      if (play) {
+        // en pilotage, stepPlay tient la caméra, la houle et le régime d'hélice
+        stepPlay(dt, clock.elapsedTime);
+      } else {
+        stepAnim(dt);
+        stepCam(dt);
+        if (spinOn) spinAngle += dt * 12;
+        controls.autoRotate = autoRotate;
+        controls.update();
+      }
+      if (play || spinOn) {
         PARTS.forEach(p => {
           if (!p.spin) return;
           p.at.forEach((inst, k) => {
@@ -1121,8 +1495,6 @@
           });
         });
       }
-      controls.autoRotate = autoRotate;
-      controls.update();
       renderer.render(scene, camera);
     }
 

@@ -15,6 +15,7 @@ dans l’ordre du montage réel ; **Démonter** rejoue l’animation à l’enve
 | Commande | Description |
 |------|-------------|
 | **Guide pas-à-pas** | 19 étapes, chacune avec sa fiche, sa nomenclature et son angle de caméra |
+| **Mode pilotage** | Le bateau à l’eau, houle, sillage — manette PS4 ou clavier |
 | **Assembler / Démonter** | Animation de montage, pièce par pièce |
 | **Progression** | Curseur pour parcourir le montage image par image |
 | **Éclatement** | Écarte les pièces depuis le bateau monté |
@@ -209,6 +210,54 @@ Deux réserves, à ne pas prendre pour des cotes relevées :
   dédié pour ces trois éléments. Ils sont posés sur la platine aux bonnes
   dimensions, mais à un emplacement **indicatif**. Tout le reste — accus,
   moteur, servo, transmission, visserie — est calé sur des relevés.
+
+## Mode pilotage
+
+Le bouton **« Mode pilotage »** met le bateau monté à l’eau et le rend
+jouable, **manette PS4 au premier plan**.
+
+**Commandes** — le mode lit l’API Gamepad du navigateur en *standard mapping*,
+celui que la DualShock 4 expose nativement en USB comme en Bluetooth :
+
+| | Manette | Clavier |
+|---|---|---|
+| Gaz | `R2` (analogique) | `↑` / `Z` / `W` |
+| Marche arrière | `L2` | `↓` / `S` |
+| Barre | stick gauche, X | `←` `→` / `Q` `D` |
+| Caméra | stick droit | `C` recentre |
+| Recentrer la caméra | `✕` | `C` |
+| Quitter | — | `Échap` |
+
+Le HUD affiche gaz, barre et vitesse, et bascule tout seul entre les deux
+aides selon qu’une manette est branchée ou non. Brancher la manette **après**
+être entré dans le mode fonctionne : la détection est refaite à chaque image.
+
+**Le pilotage** reproduit le défaut le plus caractéristique d’un jet-boat :
+**il ne gouverne que sous les gaz**. Il n’y a pas de safran — c’est la tuyère
+qui dévie le jet — donc le lacet naît de la seule composante latérale de la
+poussée. Gaz coupés en plein virage, la barre ne répond plus, exactement comme
+sur l’eau. La tuyère de la maquette pivote pour de bon, autour de la rotule du
+stator, et l’hélice accélère avec les gaz.
+
+| | |
+|---|---|
+| Vitesse limite | 2.6 m/s |
+| Traînée | quadratique, calée pour tomber pile sur cette vitesse limite |
+| Braquage de tuyère | ± 30° |
+| Assiette | cabre à l’accélération, s’enfonce au ralentissement |
+| Gîte | s’incline dans le virage, proportionnellement à `lacet × vitesse` |
+
+**L’eau** est une somme de quatre sinusoïdes (4.5, 2.6, 1.2 et 0.6 mm
+d’amplitude, de 620 à 95 mm de longueur d’onde). La même fonction tourne
+**des deux côtés** : sur le GPU pour déplacer le maillage, sur le CPU pour la
+flottaison — sinon le bateau ne suivrait pas la vague qu’il montre. Il prend
+la hauteur *et la pente* locales, donc il tangue et roule sur la houle. Le
+rendu de surface est un Fresnel avec spéculaire et écume de crête ; le sillage
+est un jet de particules : deux moustaches d’étrave et le remous du jet.
+
+Rien n’est ajouté au chargement : eau, ciel et particules ne sont construits
+qu’à l’entrée dans le mode, et libérés à la sortie. La boîte de transport, si
+elle est affichée, reste au sec.
 
 ## Boîte de transport / de vente
 
