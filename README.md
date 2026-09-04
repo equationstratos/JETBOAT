@@ -18,7 +18,7 @@ dans l’ordre du montage réel ; **Démonter** rejoue l’animation à l’enve
 | **Mode pilotage** | Le bateau à l’eau, houle, déjaugeage, gerbe de jet — manette PS4 ou clavier |
 | **Trois caméras** | Poursuite, embarquée sur le pont, orbite libre à la souris |
 | **Recherche & sélection** | Filtre sur les 70 pièces, et clic dans la 3D pour identifier une pièce |
-| **Livrées** | Coque anthracite et flashs de couleur — bleu, rouge, jaune, vert, blanc |
+| **Livrées** | Cinq couleurs × trois motifs de coque, sur anthracite |
 | **Assembler / Démonter** | Animation de montage, pièce par pièce |
 | **Progression** | Curseur pour parcourir le montage image par image |
 | **Éclatement** | Écarte les pièces depuis le bateau monté |
@@ -321,7 +321,16 @@ elle est affichée, reste au sec.
 
 Cinq peintures — **bleu, rouge, jaune, vert, blanc** — sur coque anthracite,
 plus **Atelier**, qui remet les teintes vives servant à distinguer les pièces
-pendant le montage. Le choix est retenu d’un passage à l’autre
+pendant le montage. Et **trois motifs de coque**, croisables avec les cinq
+teintes :
+
+| Motif | Tracé |
+|---|---|
+| **Flash** | Un seul trait large, du tableau à l’étrave |
+| **Bicolore** | Tout le haut du bordé, en coin qui s’ouvre vers l’arrière |
+| **Chevrons** | Trois V pointés vers l’avant, apex haut sur le bordé |
+
+La ligne de démarcation du capot et la pointe d’étrave sont communes aux trois. Le choix est retenu d’un passage à l’autre
 (`localStorage`), et vaut aussi en mode pilotage. Aucun logo, aucune marque :
 la peinture seule.
 
@@ -333,12 +342,16 @@ au maillage.
 
 ### Coque
 
-Le tracé est une coordonnée balayée `s = y + 0.135 × (200 − z)`, haute à
-l’étrave et basse au tableau. Deux lignes `s = cte` — un flash large et un
-liseré — filent le long des hauts et convergent vers l’avant, plus une pointe
-d’étrave. La pente compte : à 0.22, mon premier essai, les traits plongeaient
+Tout part d’une coordonnée balayée `s = y + 0.135 × (200 − z)`, haute à
+l’étrave et basse au tableau. **Flash** est la ligne `s = 45` ; **Bicolore**
+est le demi-plan `s > 45` ; **Chevrons** sort de ce repère et joue sur
+`(z − z₀) − 1.55 |y − 39|`, trois fois. La pente 0.135 compte : à 0.22, mon premier essai, les traits plongeaient
 sous le bouchain dès le milieu et disparaissaient ; 0.135 est la valeur qui les
 garde dans les hauts sur toute la longueur.
+
+Les chevrons ont demandé un réglage : plus bas et plus fins, leurs branches
+filaient sous le bouchain et se lisaient comme des rayures. Apex remonté à
+`y = 39`, branches raccourcies et épaissies à 4.4 mm.
 
 La peinture est bornée par la **normale** (`|n.x| > 0.16…0.28`), pas par la
 demi-largeur. C’est ce qui règle les traits qui **s’effaçaient à l’avant** :
