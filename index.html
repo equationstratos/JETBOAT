@@ -777,36 +777,97 @@
        ligne s = cte dessine un flash incliné qui file vers l'étrave. Deux
        flashs parallèles à l'arrière, un liseré au ras du livet, et la pointe
        d'étrave reprise en couleur.                                          */
+    /* Contour du capot, relevé sur son maillage (enveloppe convexe de la
+       projection, ré-échantillonnée en 56 points, périmètre 327 mm).
+       La ligne de démarcation est tracée à distance constante de ce contour,
+       et cette distance est calculée par SOMMET au chargement plutôt
+       qu'approchée dans le shader : le capot n'a aucun redan sur lequel
+       s'accrocher — c'est un dôme continu — et les formes analytiques que
+       j'ai essayées s'en écartaient de plusieurs millimètres.               */
+    const COVER_OUT = [[36.4,0.14],[31.24,2.87],[26.34,6.04],[21.78,9.67],[17.62,13.77],[13.92,18.28],[10.73,23.16],[8.09,28.36],[6.01,33.81],[4.54,39.46],[3.67,45.22],[3.4,51.05],[3.33,56.89],[3.32,62.73],[3.35,68.56],[3.42,74.4],[3.52,80.23],[3.66,86.07],[3.82,91.9],[4.01,97.74],[4.21,103.57],[4.43,109.4],[5.75,115.06],[8.95,119.9],[13.62,123.35],[19.17,125.06],[24.91,126.13],[30.65,127.18],[36.4,128.23],[42.14,127.18],[47.88,126.13],[53.62,125.06],[59.17,123.35],[63.84,119.9],[67.04,115.06],[68.37,109.4],[68.59,103.57],[68.78,97.74],[68.97,91.9],[69.13,86.07],[69.27,80.23],[69.38,74.4],[69.44,68.56],[69.47,62.73],[69.46,56.89],[69.39,51.05],[69.12,45.23],[68.25,39.46],[66.78,33.81],[64.71,28.36],[62.06,23.16],[58.86,18.28],[55.17,13.77],[51.01,9.67],[46.46,6.03],[41.55,2.87]];
+
+    function rimDistances(geo) {
+      const pos = geo.attributes.position, n = pos.count;
+      const d = new Float32Array(n), m = COVER_OUT.length;
+      for (let i = 0; i < n; i++) {
+        const px = pos.getX(i), py = pos.getY(i);
+        let best = 1e9;
+        for (let k = 0; k < m; k++) {
+          const a = COVER_OUT[k], b = COVER_OUT[(k + 1) % m];
+          const ex = b[0] - a[0], ey = b[1] - a[1];
+          const t = Math.max(0, Math.min(1,
+            ((px - a[0]) * ex + (py - a[1]) * ey) / (ex * ex + ey * ey)));
+          const dx = px - (a[0] + t * ex), dy = py - (a[1] + t * ey);
+          const q = dx * dx + dy * dy;
+          if (q < best) best = q;
+        }
+        d[i] = Math.sqrt(best);
+      }
+      geo.setAttribute('aRim', new THREE.BufferAttribute(d, 1));
+    }
+
+    /* Masque de peinture, en coordonnées de pièce.
+       `mode` 0 = coque, 1 = capot.
+
+       Coque : `s = y + 0.135 (200 - z)` est une coordonnée balayée, haute à
+       l'étrave et basse au tableau ; deux lignes `s = cte` filent le long des
+       hauts et convergent vers l'avant. La peinture est bornée par la NORMALE,
+       pas par la demi-largeur : à l'étrave la coque se rétrécit, et une porte
+       en `|x - 47|` s'y éteignait — d'où les traits qui s'effaçaient devant.
+       Une face tournée vers le flanc l'est autant à l'étrave qu'au milieu.
+
+       Capot : la ligne de démarcation est sa ceinture verticale. On la prend
+       par la normale elle aussi, ce qui la fait suivre exactement le contour
+       de la pièce, sans avoir à en approcher la forme.
+
+       Les transitions font 0.4 mm : de quoi éviter l'escalier, pas de quoi
+       faire un dégradé — les traits sont pleins.                            */
     const LIVERY_MASK = `
-      float livMask(vec3 q) {
-        // on ne peint que les flancs, au-dessus du bouchain
-        float side  = smoothstep(12.0, 18.0, abs(q.x - 47.0));
-        float above = smoothstep(11.0, 17.0, q.y);
-        /* s : haut à l'étrave, bas au tableau. La pente 0.135 est celle qui
-           garde les deux traits dans les hauts sur TOUTE la longueur — à 0.22
-           ils plongeaient sous le bouchain dès le milieu et disparaissaient. */
+      float livMask(vec3 q, vec3 n, float mode) {
+        if (mode > 0.5) {
+          /* Capot : ligne parallèle au contour, à 2.4 mm du bord et 1.7 mm de
+             large, sur la face vue seulement — sinon elle serait peinte aussi
+             sous la collerette, du côté du joint.                           */
+          float line = smoothstep(2.30, 2.50, vRimD) * (1.0 - smoothstep(3.90, 4.10, vRimD));
+          return line * smoothstep(0.05, 0.25, n.z);
+        }
+        float side  = smoothstep(0.16, 0.28, abs(n.x));          // flancs
+        float above = smoothstep(9.6, 10.4, q.y);                // au-dessus du bouchain
         float s = q.y + 0.135 * (200.0 - q.z);
-        float f1  = 1.0 - smoothstep(3.8, 5.2, abs(s - 45.0));   // flash large
-        float f2  = 1.0 - smoothstep(1.5, 2.3, abs(s - 36.5));   // liseré bas
-        float bow = smoothstep(188.0, 198.0, q.z);               // pointe d'étrave
+        float f1  = 1.0 - smoothstep(4.3, 4.7, abs(s - 45.0));   // flash large
+        float f2  = 1.0 - smoothstep(1.8, 2.2, abs(s - 36.5));   // liseré bas
+        float bow = smoothstep(190.0, 193.0, q.z);               // pointe d'étrave
         return clamp(max(f1, f2) * side * above + bow, 0.0, 1.0);
       }`;
 
-    function makeLiveryMat(color) {
+    function makeLiveryMat(color, mode = 0) {
       const m = new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide });
-      m.userData.acc = { value: new THREE.Color(0x000000) };
-      m.userData.on  = { value: 0 };
+      m.userData.acc  = { value: new THREE.Color(0x000000) };
+      m.userData.on   = { value: 0 };
+      m.userData.mode = { value: mode };
+      /* three cache les programmes compilés en incluant `onBeforeCompile` sous
+         forme de texte dans la clé : les deux matériaux de livrée ayant la même
+         source, le capot héritait du programme de la coque — sans l'attribut
+         `aRim`, donc sans sa ligne. La clé doit distinguer les deux modes.   */
+      m.customProgramCacheKey = () => 'livery' + mode;
       m.onBeforeCompile = sh => {
-        sh.uniforms.uAcc = m.userData.acc;
-        sh.uniforms.uOn  = m.userData.on;
+        sh.uniforms.uAcc  = m.userData.acc;
+        sh.uniforms.uOn   = m.userData.on;
+        sh.uniforms.uMode = m.userData.mode;
         sh.vertexShader = sh.vertexShader
-          .replace('#include <common>', '#include <common>\nvarying vec3 vLoc;')
-          .replace('#include <begin_vertex>', '#include <begin_vertex>\nvLoc = position;');
+          .replace('#include <common>',
+                   '#include <common>\nvarying vec3 vLoc;\nvarying vec3 vNrm;\nvarying float vRimD;' +
+                   (mode ? '\nattribute float aRim;' : ''))
+          .replace('#include <begin_vertex>',
+                   '#include <begin_vertex>\nvLoc = position;\nvNrm = normal;\n' +
+                   (mode ? 'vRimD = aRim;' : 'vRimD = 0.0;'));
         sh.fragmentShader = sh.fragmentShader
           .replace('#include <common>',
-            '#include <common>\nvarying vec3 vLoc;\nuniform vec3 uAcc;\nuniform float uOn;\n' + LIVERY_MASK)
+            '#include <common>\nvarying vec3 vLoc;\nvarying vec3 vNrm;\nvarying float vRimD;\n' +
+            'uniform vec3 uAcc;\nuniform float uOn;\nuniform float uMode;\n' + LIVERY_MASK)
           .replace('#include <color_fragment>',
-            '#include <color_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, uAcc, livMask(vLoc) * uOn);');
+            '#include <color_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, uAcc, ' +
+            'livMask(vLoc, normalize(vNrm), uMode) * uOn);');
       };
       return m;
     }
@@ -853,6 +914,7 @@
           // doit avoir son axe sur l'origine du maillage, sinon elle décrit un
           // cercle au lieu de tourner sur elle-même.
           if (part.pivot) geo.translate(-part.pivot[0], -part.pivot[1], -part.pivot[2]);
+          if (part.id === 'cover') rimDistances(geo);
           resolve([geo]);
         }, undefined, () => resolve([box(1, 1, 1)]));
       });
@@ -861,9 +923,9 @@
     async function loadAll() {
       for (const part of PARTS) {
         const geos = await buildGeos(part);
-        part.mat = part.id === 'hull'
-          ? makeLiveryMat(part.color)
-          : new THREE.MeshLambertMaterial({ color: part.color, side: THREE.DoubleSide });
+        part.mat = part.id === 'hull'  ? makeLiveryMat(part.color, 0)
+                 : part.id === 'cover' ? makeLiveryMat(part.color, 1)
+                 : new THREE.MeshLambertMaterial({ color: part.color, side: THREE.DoubleSide });
         part.color0 = part.color;              // teinte d'atelier, pour y revenir
         part.objs = [];
         part.at.forEach(inst => {
@@ -1051,7 +1113,6 @@
     function setLivery(id) {
       const L = LIVERIES.find(l => l.id === id) || LIVERIES[0];
       livery = L.id;
-      const hull = PARTS.find(p => p.id === 'hull');
       for (const part of PARTS) {
         if (part.grp === 'g-case') continue;
         if (!L.accent) { part.mat.color.setHex(part.color0); continue; }
@@ -1061,9 +1122,11 @@
         else if (DARK_PARTS.includes(part.id))   part.mat.color.setHex(LIV_DARK);
         else                                     part.mat.color.setHex(part.color0);
       }
-      if (hull) {
-        hull.mat.userData.on.value = L.accent ? 1 : 0;
-        if (L.accent) hull.mat.userData.acc.value.setHex(L.accent);
+      for (const id of ['hull', 'cover']) {
+        const q = PARTS.find(x => x.id === id);
+        if (!q || !q.mat.userData.on) continue;
+        q.mat.userData.on.value = L.accent ? 1 : 0;
+        if (L.accent) q.mat.userData.acc.value.setHex(L.accent);
       }
       document.querySelectorAll('#livery-row button').forEach(b =>
         b.classList.toggle('on', b.dataset.liv === L.id));

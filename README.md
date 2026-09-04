@@ -331,18 +331,43 @@ masque calculé dans le repère de la coque et injecté dans le shader Lambert p
 `onBeforeCompile` : il colle donc à la carène quoi qu’il arrive, sans toucher
 au maillage.
 
+### Coque
+
 Le tracé est une coordonnée balayée `s = y + 0.135 × (200 − z)`, haute à
 l’étrave et basse au tableau. Deux lignes `s = cte` — un flash large et un
 liseré — filent le long des hauts et convergent vers l’avant, plus une pointe
 d’étrave. La pente compte : à 0.22, mon premier essai, les traits plongeaient
 sous le bouchain dès le milieu et disparaissaient ; 0.135 est la valeur qui les
-garde dans les hauts sur toute la longueur. La peinture est bornée aux flancs
-(`|x − 47| > 12…18`) et au-dessus du bouchain (`y > 11…17`), sinon elle
-débordait sous la carène.
+garde dans les hauts sur toute la longueur.
+
+La peinture est bornée par la **normale** (`|n.x| > 0.16…0.28`), pas par la
+demi-largeur. C’est ce qui règle les traits qui **s’effaçaient à l’avant** :
+une porte en `|x − 47|` s’éteint là où la coque se rétrécit, alors qu’une face
+tournée vers le flanc l’est autant à l’étrave qu’au milieu. Les transitions
+font 0.4 mm — de quoi éviter l’escalier, pas de quoi faire un dégradé.
 
 J’ai d’abord essayé de faire suivre la **ligne de livet** relevée sur le
 maillage : l’ajustement cubique laisse ±2.5 mm d’erreur, et une bande de 5 mm
 posée dessus ondulait visiblement. Le tracé géométrique, lui, est net.
+
+### Capot
+
+La ligne de démarcation court **à 2.4 mm du contour du capot**, sur 1.7 mm de
+large, sur sa face vue seulement. Elle n’est pas calée sur un relief : le capot
+**n’a aucun redan** — c’est un dôme continu de la collerette au sommet, ce que
+la mesure a montré après deux tentatives ratées (une « ceinture verticale » qui
+n’existe pas, puis un masque qui attrapait les trois quarts des parois
+*intérieures*, lamages et raidisseurs compris).
+
+La distance au contour est donc calculée **par sommet au chargement**, contre
+l’enveloppe convexe du capot ré-échantillonnée en 56 points, et passée au
+shader comme attribut. Exact, et sans forme analytique à ajuster.
+
+Un piège à connaître : three met en cache les programmes compilés en incluant
+`onBeforeCompile` **sous forme de texte** dans la clé. Les deux matériaux de
+livrée ayant la même source, le capot héritait du programme de la coque, sans
+l’attribut de distance — et sa ligne ne s’affichait jamais. Il faut un
+`customProgramCacheKey` qui distingue les deux modes.
 
 ## Panneau des pièces
 
