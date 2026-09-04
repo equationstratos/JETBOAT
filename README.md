@@ -224,13 +224,19 @@ celui que la DualShock 4 expose nativement en USB comme en Bluetooth :
 | Gaz | `R2` (analogique) | `↑` / `Z` / `W` |
 | Marche arrière | `L2` | `↓` / `S` |
 | Barre | stick gauche, X | `←` `→` / `Q` `D` |
-| Caméra | stick droit | `C` recentre |
-| Recentrer la caméra | `✕` | `C` |
+| Caméra | stick droit | souris : glisser / molette |
+| Repasser en poursuite | `✕` | `C` |
 | Quitter | — | `Échap` |
 
 Le HUD affiche gaz, barre et vitesse, et bascule tout seul entre les deux
 aides selon qu’une manette est branchée ou non. Brancher la manette **après**
 être entré dans le mode fonctionne : la détection est refaite à chaque image.
+
+**Deux caméras.** Par défaut, **poursuite** dans l’axe du bateau. Dès qu’on
+touche la souris — glisser ou molette — on bascule en **orbite** : ce sont
+exactement les commandes du visualiseur 3D, sauf que la cible suit le bateau,
+donc on tourne autour et on zoome pendant qu’il navigue. Le bouton du HUD, la
+touche `C` ou la croix de la manette ramènent en poursuite.
 
 **Le pilotage** reproduit le défaut le plus caractéristique d’un jet-boat :
 **il ne gouverne que sous les gaz**. Il n’y a pas de safran — c’est la tuyère
@@ -241,9 +247,11 @@ stator, et l’hélice accélère avec les gaz.
 
 | | |
 |---|---|
-| Vitesse limite | 2.6 m/s |
+| Vitesse limite | 2.6 m/s en ligne droite |
 | Traînée | quadratique, calée pour tomber pile sur cette vitesse limite |
-| Braquage de tuyère | ± 30° |
+| Braquage de tuyère | ± 35° |
+| Rayon de giration | ≈ 0.78 m à plein braquage, soit 3.4 longueurs de bateau |
+| Ripage | la carène freine en virage, ce qui resserre le rayon et fait tomber la vitesse à 1.8 m/s |
 | Assiette | cabre à l’accélération, s’enfonce au ralentissement |
 | Gîte | s’incline dans le virage, proportionnellement à `lacet × vitesse` |
 

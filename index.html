@@ -157,6 +157,7 @@
       <div class="gauge"><label data-i18n="hud-thr">Gaz</label><div class="bar"><i id="g-thr"></i></div></div>
       <div class="gauge"><label data-i18n="hud-str">Barre</label><div class="bar mid"><i id="g-str"></i></div></div>
       <div class="spd"><b id="g-spd">0.0</b><span>m/s</span></div>
+      <button id="btn-cam" data-i18n="hud-chase">Poursuite</button>
       <button id="btn-play-quit" data-i18n="hud-quit">Quitter</button>
     </div>
     <div class="hint" id="hud-hint"></div>
@@ -229,8 +230,10 @@
         'g-fix':'Visserie & joints','g-case':'Boîte de rangement',
         'h-guide':'Guide de montage','b-guide':'Guide pas-à-pas','b-quit':'Quitter le guide',
         'b-play':'Mode pilotage','hud-thr':'Gaz','hud-str':'Barre','hud-quit':'Quitter',
-        'hud-pad':'Manette : stick gauche = barre, R2 = gaz, L2 = marche arrière, stick droit = caméra, croix = recentrer.',
-        'hud-key':'Aucune manette détectée — clavier : ↑/↓ ou Z/S = gaz, ←/→ ou Q/D = barre, C = caméra, Échap = quitter.',
+        'hud-pad':'Manette : stick gauche = barre, R2 = gaz, L2 = marche arrière, stick droit = caméra, croix = repasser en poursuite.',
+        'hud-key':'Aucune manette détectée — clavier : ↑/↓ ou Z/S = gaz, ←/→ ou Q/D = barre, Échap = quitter.',
+        'hud-orb':' · Souris : glisser pour orbiter, molette pour zoomer — la caméra suit le bateau. C repasse en poursuite.',
+        'hud-chase':'Poursuite','hud-orbit':'Orbite',
         'g-step':'Étape','g-of':'sur','g-bom':'Pièces de l’étape','g-tip':'À surveiller',
         'ph-flat':'Pièces à plat','ph-done':'Bateau monté',
         'ui-hide':'Masquer le panneau (P)','ui-show':'Afficher le panneau (P)'
@@ -245,8 +248,10 @@
         'g-fix':'Fasteners & seals','g-case':'Storage case',
         'h-guide':'Build guide','b-guide':'Step-by-step','b-quit':'Leave guide',
         'b-play':'Drive it','hud-thr':'Throttle','hud-str':'Steering','hud-quit':'Exit',
-        'hud-pad':'Gamepad: left stick steers, R2 throttle, L2 reverse, right stick camera, cross to recentre.',
-        'hud-key':'No gamepad detected — keyboard: ↑/↓ or W/S throttle, ←/→ or A/D steering, C camera, Esc to exit.',
+        'hud-pad':'Gamepad: left stick steers, R2 throttle, L2 reverse, right stick camera, cross to snap back to chase.',
+        'hud-key':'No gamepad detected — keyboard: ↑/↓ or W/S throttle, ←/→ or A/D steering, Esc to exit.',
+        'hud-orb':' · Mouse: drag to orbit, wheel to zoom — the camera keeps following the boat. C returns to chase.',
+        'hud-chase':'Chase','hud-orbit':'Orbit',
         'g-step':'Step','g-of':'of','g-bom':'Parts for this step','g-tip':'Watch out',
         'ph-flat':'Parts laid out','ph-done':'Boat assembled',
         'ui-hide':'Hide panel (P)','ui-show':'Show panel (P)'
@@ -1297,7 +1302,6 @@
       const K = k => keys.has(k) ? 1 : 0;
       thr += K('arrowup') + K('z') + K('w') - 0.6 * (K('arrowdown') + K('s'));
       str += K('arrowright') + K('d') - (K('arrowleft') + K('q') + K('a'));
-      if (keys.has('c')) recentre = true;
       return {
         pad: !!gp,
         thr: THREE.MathUtils.clamp(thr, -0.6, 1),
@@ -1313,7 +1317,9 @@
     const P_VMAX = 2600,                       // vitesse limite, mm/s (2.6 m/s)
           P_THRUST = 2600,                     // accélération plein gaz, mm/s²
           P_DRAG = P_THRUST / (P_VMAX * P_VMAX),
-          P_YAW = 2.2, P_YAWD = 2.2, P_NOZ = 0.52;
+          P_YAW = 3.0, P_YAWD = 2.0,           // autorité et amortissement en lacet
+          P_NOZ = 0.62,                        // braquage maxi de la tuyère (35°)
+          P_SCRUB = 0.9;                       // freinage en virage
     const NOZ_PIVOT = new THREE.Vector3(0, 15.11, -86.66);   // rotule du stator (monde)
 
     function stepPlay(dt, tm) {
@@ -1328,9 +1334,14 @@
       // P_DRAG = P_THRUST / P_VMAX² : la vitesse limite tombe pile sur P_VMAX.
       p.v += (thrust * Math.cos(noz) - P_DRAG * p.v * Math.abs(p.v)) * dt;
       p.v = THREE.MathUtils.clamp(p.v, -P_VMAX * 0.35, P_VMAX);
-      // lacet : uniquement la composante latérale du jet
-      p.r += (-Math.sin(noz) * thrust * P_YAW / 1000 - p.r * P_YAWD) * dt;
+      // Lacet : uniquement la composante latérale du jet. Tuyère braquée à
+      // tribord, le jet part à tribord, l'arrière chasse à bâbord, l'étrave
+      // vient à tribord — donc lacet POSITIF. Le signe était inversé et le
+      // bateau tournait à l'opposé de sa propre tuyère.
+      p.r += (Math.sin(noz) * thrust * P_YAW / 1000 - p.r * P_YAWD) * dt;
       p.yaw += p.r * dt;
+      // en virage serré la carène ripe et freine — c'est ce qui resserre le rayon
+      p.v -= Math.abs(Math.sin(noz)) * p.v * P_SCRUB * dt;
 
       const fx = Math.sin(p.yaw), fz = Math.cos(p.yaw);
       p.x += fx * p.v * dt; p.z += fz * p.v * dt;
@@ -1386,17 +1397,39 @@
       }
       pa.position.needsUpdate = pa.size.needsUpdate = pa.alpha.needsUpdate = true;
 
-      // caméra de poursuite
-      if (inp.recentre) { p.cx = 0; p.cy = 0; }
-      p.cx -= inp.camX * dt * 2.2; p.cy = THREE.MathUtils.clamp(p.cy - inp.camY * dt * 1.4, -0.35, 0.9);
-      const a = p.yaw + Math.PI + p.cx, dist = 330 + Math.abs(p.v) * 0.075;
-      const goal = new THREE.Vector3(
-        p.x + Math.sin(a) * dist * Math.cos(p.cy * 0.7),
-        w.h + 92 + p.cy * 210,
-        p.z + Math.cos(a) * dist * Math.cos(p.cy * 0.7));
-      camera.position.lerp(goal, Math.min(1, dt * 3.2));
-      p.look.lerp(new THREE.Vector3(p.x + fx * 70, w.h + 26, p.z + fz * 70), Math.min(1, dt * 5));
-      camera.lookAt(p.look);
+      /* Caméra. Deux modes : poursuite dans l'axe du bateau, ou orbite libre
+         — les mêmes commandes que le visualiseur 3D, mais la cible suit le
+         bateau. On bascule en orbite dès qu'on touche la souris, et la croix
+         de la manette (ou le bouton du HUD) ramène en poursuite.           */
+      const pivot = new THREE.Vector3(p.x, w.h + 24, p.z);
+      if (inp.recentre) setCam('chase');
+      if (p.cam === 'chase') {
+        p.cx -= inp.camX * dt * 2.2;
+        p.cy = THREE.MathUtils.clamp(p.cy - inp.camY * dt * 1.4, -0.35, 0.9);
+        const a = p.yaw + Math.PI + p.cx, dist = 330 + Math.abs(p.v) * 0.075;
+        const goal = new THREE.Vector3(
+          p.x + Math.sin(a) * dist * Math.cos(p.cy * 0.7),
+          w.h + 92 + p.cy * 210,
+          p.z + Math.cos(a) * dist * Math.cos(p.cy * 0.7));
+        camera.position.lerp(goal, Math.min(1, dt * 3.2));
+        p.look.lerp(new THREE.Vector3(p.x + fx * 70, w.h + 26, p.z + fz * 70), Math.min(1, dt * 5));
+        camera.lookAt(p.look);
+        controls.target.copy(pivot);            // pour une bascule sans à-coup
+      } else {
+        // la cible se déplace avec le bateau ; la caméra suit du même vecteur,
+        // ce qui conserve exactement l'orientation et la distance choisies
+        tmpV.copy(pivot).sub(controls.target);
+        camera.position.add(tmpV);
+        controls.target.copy(pivot);
+        if (inp.camX || inp.camY) {             // stick droit : orbite aussi
+          const off = camera.position.clone().sub(pivot);
+          const sph = new THREE.Spherical().setFromVector3(off);
+          sph.theta -= inp.camX * dt * 2.2;
+          sph.phi = THREE.MathUtils.clamp(sph.phi + inp.camY * dt * 1.4, 0.12, Math.PI / 2 - 0.03);
+          camera.position.copy(pivot).add(new THREE.Vector3().setFromSpherical(sph));
+        }
+        controls.update();
+      }
 
       p.water.material.uniforms.uTime.value = tm;
       p.water.material.uniforms.uEye.value.copy(camera.position);
@@ -1409,11 +1442,21 @@
       st.style.width = Math.abs(p.str) * 50 + '%';
       st.style.left = (p.str < 0 ? 50 - Math.abs(p.str) * 50 : 50) + '%';
       document.getElementById('g-spd').textContent = (Math.abs(p.v) / 1000).toFixed(1);
-      if (inp.pad !== p.hadPad) {
-        p.hadPad = inp.pad;
-        document.getElementById('hud-hint').textContent = t(inp.pad ? 'hud-pad' : 'hud-key');
-      }
+      if (inp.pad !== p.hadPad) { p.hadPad = inp.pad; hudHint(); }
       spinAngle += dt * (6 + Math.abs(p.thr) * 190);
+    }
+
+    function setCam(mode) {
+      if (!play || play.cam === mode) return;
+      play.cam = mode;
+      controls.enabled = (mode === 'orbit');
+      controls.enableDamping = true;
+      document.getElementById('btn-cam').textContent = t(mode === 'orbit' ? 'hud-orbit' : 'hud-chase');
+      hudHint();
+    }
+    function hudHint() {
+      const base = t(play && play.hadPad ? 'hud-pad' : 'hud-key');
+      document.getElementById('hud-hint').textContent = base + t('hud-orb');
     }
 
     function setPlay(on) {
@@ -1443,10 +1486,12 @@
           x: 0, z: 0, yaw: 0, v: 0, r: 0, prevV: 0, thr: 0, str: 0,
           emit: 0, cx: 0, cy: 0.12, hadPad: null, oldFog, oldBg, vis,
           noz: items.find(i => i.part.id === 'nozzle'),
-          look: new THREE.Vector3()
+          cam: 'chase', look: new THREE.Vector3()
         });
+        controls.target.set(0, 24, 0);
+        document.getElementById('btn-cam').textContent = t('hud-chase');
         camGoal = null;
-        document.getElementById('hud-hint').textContent = t('hud-key');
+        hudHint();
       } else {
         const p = play; play = null;
         scene.remove(p.water); scene.remove(p.sky); scene.remove(p.foam);
@@ -1468,9 +1513,19 @@
       document.getElementById('btn-play').textContent = t('b-play');
     }
 
+    document.getElementById('btn-cam').onclick =
+      () => setCam(play && play.cam === 'orbit' ? 'chase' : 'orbit');
+    // toucher la souris passe en orbite : c'est le geste attendu d'un visu 3D
+    renderer.domElement.addEventListener('pointerdown', () => { if (play) setCam('orbit'); });
+    renderer.domElement.addEventListener('wheel', () => { if (play) setCam('orbit'); }, { passive: true });
+
     document.getElementById('btn-play').onclick = () => setPlay(true);
     document.getElementById('btn-play-quit').onclick = () => setPlay(false);
-    addEventListener('keydown', e => { if (play && e.key === 'Escape') setPlay(false); });
+    addEventListener('keydown', e => {
+      if (!play) return;
+      if (e.key === 'Escape') setPlay(false);
+      else if (e.key.toLowerCase() === 'c') setCam('chase');
+    });
 
     const clock = new THREE.Clock();
     function animate() {
