@@ -250,13 +250,18 @@
     /* GOTECK GS-2502 « Nano servo » : 16.0 × 8.0 × 20.0 mm, 2.2 g.
        Couché sur le flanc, comme sur la photo de montage : la longueur (16)
        dans la longueur du bateau, la hauteur (20) en travers, l'épaisseur (8)
-       à la verticale. Debout, ses 20 mm ne tiennent pas dans les 12.9 mm que
-       laisse le capot plat au-dessus des plots.
-       Les languettes d'origine sont coupées — c'est ce qui permet au boîtier
-       de descendre entre les plots — et les deux vis M2×6 ne le vissent pas :
-       elles l'encadrent à 0.75 mm devant et derrière et le calent. Forme
-       d'origine conservée pour le reste : boîtier, moyeu de sortie, corne.
-       Origine = dessus des plots.                                          */
+       à la verticale.
+       Il ne se pose PAS sur la baie : celle-ci n'est pas une tablette pleine
+       mais quatre nervures de 0.7 mm qui montent du toit du tunnel d'arbre
+       (y = 23.55) jusqu'à y = 31.57. jtronics les coupe au cutter dans sa
+       vidéo de montage pour que le servo descende au fond — c'est ce que fait
+       tools/hull_servo_pocket.py, d'où models/boat_hull_cut.STL. Le boîtier
+       repose donc sur le toit du tunnel et son dessus affleure les talons de
+       nervure restants, à 31.55 pour 31.57.
+       Les languettes du servo sont coupées elles aussi, et les deux vis M2×6
+       ne le vissent pas : elles l'encadrent devant et derrière et le calent.
+       Forme d'origine conservée : boîtier, moyeu de sortie, corne.
+       Origine = toit du tunnel d'arbre.                                     */
     function servoGeo() {
       return [at(box(20, 8, 16), 0, 4, 0),              // boîtier posé sur les plots
               at(box(20, 1.2, 3), 0, 7.4, 6.6),         // capot supérieur du boîtier
@@ -326,7 +331,7 @@
 
     const PARTS = [
       /* --- pièces imprimées --------------------------------------------- */
-      { id:'hull', grp:'g-print', name:{fr:'Coque',en:'Hull'}, file:'boat_hull.STL',
+      { id:'hull', grp:'g-print', name:{fr:'Coque',en:'Hull'}, file:'models/boat_hull_cut.STL',
         color:0xf4520c, lay:'up', explode:[0,0,0], at:[{pos:[0,0,0]}] },
 
       /* Les 4 bossages ne sont pas à la même hauteur : 44.26 à l'avant, 39.80
@@ -423,7 +428,7 @@
         at:[{pos:[79.827,16.959,0.054], rot:[Math.PI,0,2.766277]}] },
 
       { id:'servo', grp:'g-elec', name:{fr:'Servo 2 g',en:'2 g servo'},
-        geo:servoGeo, color:0x2b2f36, lay:'up', at:[{pos:[47,31.57,47.05]}] },
+        geo:servoGeo, color:0x2b2f36, lay:'up', at:[{pos:[47,23.55,47.05]}] },
 
       { id:'m2x6_servo', grp:'g-fix', name:{fr:'Vis M2×6 (servo)',en:'M2×6 screws (servo)'},
         geo:()=>screwGeo(6), color:0xd8dde3, lay:'flat',
@@ -619,10 +624,10 @@
 
       { parts:['servo','m2x6_servo'], az:150, el:44, pad:1.7,
         t:{fr:'Servo',en:'Servo'},
-        d:{fr:'Le servo se pose couché sur le flanc, axe long dans la longueur du bateau, pattes débordant à l’avant et à l’arrière, deux vis M2×6 dans la tablette.',
-           en:'The servo lies on its side, long axis fore-and-aft, tabs overhanging front and back, two M2×6 screws into the shelf.'},
-        tip:{fr:'Couché, son arbre pointe vers bâbord : la corne balaie le plan vertical et pousse la tringle d’avant en arrière. Debout, rien ne tombe en face.',
-             en:'On its side the output shaft points to port: the horn sweeps the vertical plane and pushes the rod fore and aft. Upright, nothing lines up.'} },
+        d:{fr:'Couper d’abord au cutter les quatre nervures de la baie, sur les 16 mm du boîtier : c’est ce que fait jtronics dans sa vidéo. Le servo, languettes coupées, descend alors jusqu’au toit du tunnel et son dessus affleure les talons restants. Les deux vis M2×6 le calent devant et derrière.',
+           en:'First trim the bay’s four thin ribs over the 16 mm of the case — this is what jtronics does in his video. With its tabs cut off, the servo then drops to the shaft-tunnel roof and its top sits flush with the remaining stubs. The two M2×6 screws wedge it front and back.'},
+        tip:{fr:'Ne couper que sur la longueur du boîtier : les talons avant et arrière le calent en longueur et portent les deux vis. Couché, son arbre pointe vers bâbord — du côté du passage de tringle à x = 37.2.',
+             en:'Only cut over the length of the case: the fore and aft stubs locate it and carry the two screws. On its side the output shaft points to port — the side of the pushrod passage at x = 37.2.'} },
 
       { parts:['rcmount','m2x6_elec'], az:145, el:48, pad:1.5,
         t:{fr:'Platine électronique',en:'Electronics tray'},

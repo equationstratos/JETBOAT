@@ -179,9 +179,21 @@ la matière des bossages. Périmètre **273 mm**, pour un cordon fourni en
 
 **Servo** : le GOTECK GS-2502 mesure **16.0 × 8.0 × 20.0 mm** (2.2 g). Il est
 **couché sur le flanc** : longueur dans la longueur du bateau, hauteur en
-travers, épaisseur à la verticale. C’est la seule pose possible — debout, ses
-20 mm de haut ne tiennent pas dans les **12.9 mm** que le capot plat laisse
-au-dessus des plots.
+travers, épaisseur à la verticale.
+
+Sa baie **n’est pas une tablette pleine**. Ce sont **quatre nervures de
+0.7 mm** — `x = 42.75-43.45`, `45.30-46.00`, `47.00-47.70`, `50.55-51.25` —
+qui montent du toit du tunnel d’arbre, à `y = 23.55`, jusqu’à `y = 31.57`, sur
+`z = 35.05` à `59.55`. Posé dessus, le servo reste perché 8 mm trop haut ;
+c’est pour cela que **jtronics les coupe au cutter dans sa vidéo de montage**.
+
+`tools/hull_servo_pocket.py` fait la même chose sur le maillage : il retire
+**383 mm³** de nervure sur les 16.6 mm du boîtier et écrit
+`models/boat_hull_cut.STL`, que charge le viewer. `boat_hull.STL`, le fichier
+d’origine, n’est pas touché. Les talons avant et arrière subsistent : ils
+calent le servo en longueur et portent les deux vis M2×6. Le boîtier repose
+alors sur le toit du tunnel et **son dessus affleure ces talons — 31.55 pour
+31.57**. Collision servo / coque après perçage : **0.00 mm³**.
 
 Ses **languettes d’origine sont coupées** : c’est ce qui permet au boîtier de
 descendre entre les plots. Les deux vis M2×6 ne le vissent donc pas — elles
