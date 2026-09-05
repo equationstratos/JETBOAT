@@ -413,6 +413,7 @@
     /* Motifs de coque. Le tracé change, la couleur ne bouge pas : on peut donc
        croiser les cinq teintes et les trois dessins.                        */
     const PATTERNS = [
+      { id:'course',   name:{fr:'Course',   en:'Race'} },
       { id:'flash',    name:{fr:'Flash',    en:'Flash'} },
       { id:'bicolore', name:{fr:'Bicolore', en:'Two-tone'} },
       { id:'chevrons', name:{fr:'Chevrons', en:'Chevrons'} },
@@ -846,9 +847,21 @@
         float side  = smoothstep(0.16, 0.28, abs(n.x));          // flancs
         float above = smoothstep(9.6, 10.4, q.y);                // au-dessus du bouchain
         float s = q.y + 0.135 * (200.0 - q.z);
-        float bow = smoothstep(190.0, 193.0, q.z);               // pointe d'étrave
+        float bow = smoothstep(uPat < -0.5 ? 174.0 : 190.0,
+                               uPat < -0.5 ? 182.0 : 193.0, q.z);   // pointe d'étrave
         float m;
-        if (uPat < 0.5) {
+        if (uPat < -0.5) {
+          /* Course. La photo de référence a un franc-bord plat et haut, sur
+             lequel on peut poser des graphismes ; cette carène est un V profond
+             dont le bordé au-dessus du bouchain ne fait que ~8 mm — mesuré sur
+             le maillage. On garde donc les trois éléments qui portent : le
+             bandeau de livet, le coin d'étrave et le bandeau de tableau, tous
+             exprimés dans la coordonnée balayée qui a fait ses preuves.      */
+          float liv  = 1.0 - smoothstep(4.3, 4.7, abs(s - 45.0));
+          float pop  = (1.0 - smoothstep(7.0, 11.0, q.z))
+                     * smoothstep(33.0, 37.0, s);
+          m = max(liv, pop);
+                } else if (uPat < 0.5) {
           // Flash : un seul trait large, du tableau à l'étrave
           m = 1.0 - smoothstep(4.3, 4.7, abs(s - 45.0));
         } else if (uPat < 1.5) {
@@ -1138,7 +1151,7 @@
        qui servent à distinguer les pièces au montage ; les cinq autres passent
        tout en anthracite et ne laissent la couleur qu'aux flashs de coque, au
        pont et aux trims — la boîte de rangement, elle, garde sa teinte.      */
-    let livery = 'atelier', pattern = 'flash';
+    let livery = 'atelier', pattern = 'course';
     const ACCENT_PARTS = ['trim15', 'trim20'];
     const DARK_PARTS   = ['nozzle', 'stator', 'prop', 'clevis', 'rcmount'];
 
@@ -1169,7 +1182,8 @@
       const i = Math.max(0, PATTERNS.findIndex(q => q.id === id));
       pattern = PATTERNS[i].id;
       const hull = PARTS.find(q => q.id === 'hull');
-      if (hull && hull.mat.userData.pat) hull.mat.userData.pat.value = i;
+      // 'course' porte la valeur -1 : le shader teste uPat par seuils croissants
+      if (hull && hull.mat.userData.pat) hull.mat.userData.pat.value = i - 1;
       document.querySelectorAll('#pattern-row button').forEach(b =>
         b.classList.toggle('on', b.dataset.pat === pattern));
       try { localStorage.setItem('jetboat-pattern', pattern); } catch (_) {}
@@ -1195,10 +1209,10 @@
         b.onclick = () => setPattern(P.id);
         prow.appendChild(b);
       }
-      let saved = 'atelier', sp = 'flash';
+      let saved = 'atelier', sp = 'course';
       try {
         saved = localStorage.getItem('jetboat-livery') || 'atelier';
-        sp = localStorage.getItem('jetboat-pattern') || 'flash';
+        sp = localStorage.getItem('jetboat-pattern') || 'course';
       } catch (_) {}
       setLivery(saved);
       setPattern(sp);

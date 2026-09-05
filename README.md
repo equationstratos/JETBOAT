@@ -326,6 +326,7 @@ teintes :
 
 | Motif | Tracé |
 |---|---|
+| **Course** | Bandeau de livet, coin d’étrave plein, bandeau de tableau — la composition la plus proche de la référence |
 | **Flash** | Un seul trait large, du tableau à l’étrave |
 | **Bicolore** | Tout le haut du bordé, en coin qui s’ouvre vers l’arrière |
 | **Chevrons** | Trois V pointés vers l’avant, apex haut sur le bordé |
@@ -343,13 +344,24 @@ au maillage.
 ### Coque
 
 Tout part d’une coordonnée balayée `s = y + 0.135 × (200 − z)`, haute à
-l’étrave et basse au tableau. **Flash** est la ligne `s = 45` ; **Bicolore**
-est le demi-plan `s > 45` ; **Chevrons** sort de ce repère et joue sur
+l’étrave et basse au tableau. **Flash** est la ligne `s = 45` ; **Course**
+ajoute à cette ligne un coin d’étrave (`z > 174…182`) et un bandeau de tableau
+(`z < 7…11`, borné à `s > 33` pour rester sur le bordé) ; **Bicolore** est le
+demi-plan `s > 45` ; **Chevrons** sort de ce repère et joue sur
 `(z − z₀) − 1.55 |y − 39|`, trois fois. La pente 0.135 compte : à 0.22, mon premier essai, les traits plongeaient
 sous le bouchain dès le milieu et disparaissaient ; 0.135 est la valeur qui les
 garde dans les hauts sur toute la longueur.
 
-Les chevrons ont demandé un réglage : plus bas et plus fins, leurs branches
+**Ce que cette carène ne peut pas porter.** La référence a un franc-bord plat
+et haut, sur lequel on pose des graphismes de flanc — chevrons emboîtés, flash
+qui remonte au tableau. Mesuré sur le maillage, le bordé de jtronics **au-dessus
+du bouchain ne fait qu’environ 8 mm de haut** : c’est une carène en V profond,
+presque tout son profil est du fond. Les graphismes de flanc de la référence
+n’y tiennent pas — posés plus bas ils débordent sous la carène, ce qu’un
+premier essai a montré sans ambiguïté. « Course » garde donc les trois éléments
+qui portent (livet, étrave, tableau) et laisse tomber les chevrons de flanc.
+
+Les chevrons du motif du même nom ont demandé un réglage : plus bas et plus fins, leurs branches
 filaient sous le bouchain et se lisaient comme des rayures. Apex remonté à
 `y = 39`, branches raccourcies et épaissies à 4.4 mm.
 
